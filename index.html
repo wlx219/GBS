@@ -1,0 +1,3455 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>机械标准件查询系统</title>
+    <style>
+        /* ===== CSS Theme Variables ===== */
+        :root {
+            /* Dark Theme (default) */
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-tertiary: #0f0f1a;
+            --bg-card: #16213e;
+            --border-color: #333;
+            --text-primary: #eee;
+            --text-secondary: #ccc;
+            --text-muted: #666;
+            --accent: #e94560;
+            --accent-bg: rgba(233,69,96,0.15);
+            --accent-hover: rgba(233,69,96,0.3);
+            --header-gradient-1: #16213e;
+            --header-gradient-2: #0f3460;
+            --scrollbar-track: #1a1a2e;
+            --scrollbar-thumb: #333;
+            --input-bg: #16213e;
+            --input-border: #333;
+            --tag-bg: rgba(233,69,96,0.15);
+            --tag-color: #e94560;
+            --draw-bg: #0a0a14;
+            --draw-line: #e94560;
+            --draw-text: #aaa;
+            --draw-dim: #4a9eff;
+            --cad-bg: #0f3460;
+            --cad-border: #1a4a7a;
+            --table-header: #e94560;
+            --table-border: #333;
+            --table-alt: rgba(233,69,96,0.05);
+            --panel-title-bg: #16213e;
+            --panel-title-color: #888;
+            --header-btn-bg: #0f3460;
+            --header-btn-border: #1a4a7a;
+            --active-item: #1a4a7a;
+            --hover-item: #1f2b47;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f0f2f5;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #e8eaed;
+            --bg-card: #ffffff;
+            --border-color: #ddd;
+            --text-primary: #1a1a2e;
+            --text-secondary: #444;
+            --text-muted: #888;
+            --accent: #d93050;
+            --accent-bg: rgba(217,48,80,0.1);
+            --accent-hover: rgba(217,48,80,0.2);
+            --header-gradient-1: #ffffff;
+            --header-gradient-2: #f0f2f5;
+            --scrollbar-track: #f0f2f5;
+            --scrollbar-thumb: #ccc;
+            --input-bg: #ffffff;
+            --input-border: #ccc;
+            --tag-bg: rgba(217,48,80,0.1);
+            --tag-color: #d93050;
+            --draw-bg: #ffffff;
+            --draw-line: #d93050;
+            --draw-text: #555;
+            --draw-dim: #0066cc;
+            --cad-bg: #f0f2f5;
+            --cad-border: #ddd;
+            --table-header: #d93050;
+            --table-border: #e0e0e0;
+            --table-alt: rgba(217,48,80,0.03);
+            --panel-title-bg: #f8f9fa;
+            --panel-title-color: #666;
+            --header-btn-bg: #f0f2f5;
+            --header-btn-border: #ddd;
+            --active-item: #e8f0fe;
+            --hover-item: #f5f5f5;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* ===== Header ===== */
+        .header {
+            background: linear-gradient(135deg, var(--header-gradient-1) 0%, var(--header-gradient-2) 100%);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid var(--accent);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            transition: background 0.3s;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header h1 span {
+            font-size: 26px;
+        }
+
+        .header .version {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-left: 8px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* ===== Compare Panel ===== */
+        .compare-toggle-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: var(--header-btn-bg);
+            border: 1px solid var(--header-btn-border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+        .compare-toggle-btn:hover {
+            background: var(--accent-bg);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .compare-toggle-btn .badge {
+            background: var(--accent);
+            color: #fff;
+            font-size: 10px;
+            padding: 1px 5px;
+            border-radius: 10px;
+            min-width: 16px;
+            text-align: center;
+            display: none;
+        }
+        .compare-toggle-btn .badge.show { display: inline; }
+
+        .compare-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 900;
+        }
+        .compare-overlay.show { display: block; }
+
+        .compare-panel {
+            position: fixed;
+            top: 0; right: -520px;
+            width: 500px;
+            height: 100vh;
+            background: var(--bg-secondary);
+            border-left: 2px solid var(--accent);
+            z-index: 901;
+            display: flex;
+            flex-direction: column;
+            transition: right 0.35s ease;
+            box-shadow: -4px 0 20px rgba(0,0,0,0.3);
+        }
+        .compare-panel.open { right: 0; }
+
+        .compare-panel-header {
+            padding: 16px 20px;
+            background: linear-gradient(135deg, var(--header-gradient-1), var(--header-gradient-2));
+            border-bottom: 2px solid var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .compare-panel-header h2 {
+            font-size: 16px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .compare-close-btn {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 24px;
+            cursor: pointer;
+            line-height: 1;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .compare-close-btn:hover { background: var(--accent-bg); }
+
+        .compare-panel-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .compare-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+        .compare-empty .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
+
+        .compare-table-wrap {
+            overflow-x: auto;
+        }
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        .compare-table th {
+            background: var(--accent);
+            color: #fff;
+            padding: 8px 10px;
+            text-align: left;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+        }
+        .compare-table td {
+            padding: 7px 10px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+        .compare-table tr:nth-child(even) td { background: var(--bg-tertiary); }
+        .compare-table tr:hover td { background: var(--hover-item); }
+        .compare-table .compare-stdno {
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .compare-table .compare-name {
+            color: var(--text-primary);
+            font-size: 11px;
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .compare-table .compare-remove {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .compare-table .compare-remove:hover { background: var(--accent-bg); color: var(--accent); }
+        .compare-table .param-row th {
+            background: var(--bg-card);
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: normal;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .compare-panel-footer {
+            padding: 12px 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+            background: var(--bg-tertiary);
+        }
+        .compare-action-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--header-btn-border);
+            border-radius: 8px;
+            background: var(--header-btn-bg);
+            color: var(--text-primary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .compare-action-btn:hover { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+        .compare-action-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .compare-action-btn.primary:hover { opacity: 0.85; }
+
+        /* ===== Favorites & History Panel (shared) ===== */
+        .fav-hist-panel {
+            position: fixed;
+            top: 0; right: -420px;
+            width: 400px;
+            height: 100vh;
+            background: var(--bg-secondary);
+            border-left: 2px solid var(--accent);
+            z-index: 902;
+            display: flex;
+            flex-direction: column;
+            transition: right 0.35s ease;
+            box-shadow: -4px 0 20px rgba(0,0,0,0.3);
+        }
+        .fav-hist-panel.open { right: 0; }
+
+        .fav-hist-panel-header {
+            padding: 16px 20px;
+            background: linear-gradient(135deg, var(--header-gradient-1), var(--header-gradient-2));
+            border-bottom: 2px solid var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .fav-hist-panel-header h2 {
+            font-size: 16px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .fav-hist-panel-header h2 .count {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: normal;
+        }
+
+        .fav-hist-panel-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .fav-hist-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+        .fav-hist-empty .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
+
+        .fav-item, .hist-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .fav-item:hover, .hist-item:hover {
+            border-color: var(--accent);
+            transform: translateX(3px);
+        }
+        .fav-item .fav-icon {
+            font-size: 18px;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+        .fav-item .info { flex: 1; min-width: 0; }
+        .fav-item .stdno { font-size: 13px; color: var(--accent); font-weight: 600; }
+        .fav-item .fname { font-size: 11px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .fav-item .fav-remove {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+        .fav-item .fav-remove:hover { background: var(--accent-bg); color: var(--accent); }
+
+        .hist-item .hist-time {
+            font-size: 10px;
+            color: var(--text-muted);
+            flex-shrink: 0;
+            min-width: 55px;
+            text-align: right;
+        }
+        .hist-item .info { flex: 1; min-width: 0; }
+        .hist-item .stdno { font-size: 13px; color: var(--accent); font-weight: 600; }
+        .hist-item .fname { font-size: 11px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .fav-hist-panel-footer {
+            padding: 12px 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+            background: var(--bg-tertiary);
+        }
+
+        /* Tab switcher in panel header */
+        .panel-tabs {
+            display: flex;
+            gap: 4px;
+            margin-left: 16px;
+        }
+        .panel-tab {
+            padding: 4px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--header-btn-border);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .panel-tab.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+        .panel-tab:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+
+        .search-history-dropdown .history-clear:hover {
+            background: var(--accent-bg);
+        }
+
+        /* PDF Image Display */
+        .pdf-image-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pdf-image-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .pdf-badge {
+            background: linear-gradient(135deg, #4a9eff, #0066cc);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .pdf-source {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .pdf-note, .svg-note {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 6px;
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: var(--header-btn-bg);
+            border: 1px solid var(--header-btn-border);
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-secondary);
+            transition: all 0.3s;
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .theme-toggle .icon {
+            font-size: 16px;
+        }
+
+        /* Search Bar */
+        .search-container {
+            display: flex;
+            gap: 8px;
+        }
+
+        .search-input {
+            width: 300px;
+            padding: 9px 16px;
+            border: 2px solid var(--input-border);
+            border-radius: 8px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent-bg);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .search-btn {
+            padding: 9px 20px;
+            background: linear-gradient(135deg, var(--accent) 0%, #ff6b6b 100%);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(233,69,96,0.35);
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            padding: 8px 24px;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 12px;
+            color: var(--text-muted);
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .stats-bar .stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stats-bar .stat .value {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .stats-bar .divider {
+            color: var(--border-color);
+        }
+
+        /* ===== Main Layout: 3 Panels ===== */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 95px);
+        }
+
+        /* Left Panel */
+        .left-panel {
+            width: 220px;
+            min-width: 180px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .panel-title {
+            padding: 14px 16px;
+            font-size: 11px;
+            color: var(--panel-title-color);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--panel-title-bg);
+            transition: background 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        .category-item {
+            padding: 14px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .category-item:hover {
+            background: var(--hover-item);
+        }
+
+        .category-item.active {
+            background: var(--active-item);
+            border-bottom: none;
+        }
+
+        .category-item .icon {
+            font-size: 20px;
+        }
+
+        .category-item .info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .category-item .name {
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .category-item .desc {
+            font-size: 10px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .category-count {
+            font-size: 10px;
+            color: var(--accent);
+            background: var(--accent-bg);
+            padding: 2px 6px;
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        /* Middle Panel */
+        .middle-panel {
+            width: 300px;
+            min-width: 200px;
+            background: var(--bg-primary);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .model-list {
+            padding: 8px;
+        }
+
+        .model-item {
+            padding: 12px 14px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .model-item:hover {
+            border-color: var(--accent);
+            transform: translateX(3px);
+        }
+
+        .model-item.active {
+            background: var(--active-item);
+            border-color: var(--accent);
+        }
+
+        .model-item .standard {
+            font-size: 13px;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .model-item .name {
+            font-size: 12px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .model-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-right: 8px;
+        }
+
+        .model-item-left {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .model-item-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .compare-add-btn {
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .compare-add-btn:hover {
+            background: var(--accent-bg);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .compare-add-btn.added {
+            background: var(--accent-bg);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .fav-btn {
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .fav-btn:hover {
+            background: rgba(255, 215, 0, 0.15);
+            border-color: #ffd700;
+            color: #ffd700;
+        }
+
+        .fav-btn.added {
+            background: rgba(255, 215, 0, 0.15);
+            border-color: #ffd700;
+            color: #ffd700;
+        }
+
+        /* ===== Advanced Filter (Left Panel) ===== */
+        .filter-toggle-bar {
+            padding: 10px 14px;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .filter-toggle-bar:hover { background: var(--hover-item); }
+
+        .filter-toggle-bar .filter-toggle-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .filter-toggle-bar .filter-toggle-label .filter-badge {
+            background: var(--accent);
+            color: #fff;
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 10px;
+            min-width: 18px;
+            text-align: center;
+            display: none;
+        }
+
+        .filter-toggle-bar .filter-toggle-label .filter-badge.show { display: inline; }
+
+        .filter-toggle-icon {
+            font-size: 14px;
+            transition: transform 0.25s;
+            color: var(--text-muted);
+        }
+
+        .filter-toggle-icon.open { transform: rotate(180deg); }
+
+        .filter-panel {
+            display: none;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+        }
+
+        .filter-panel.open { display: block; }
+
+        .filter-group {
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .filter-group:last-child { border-bottom: none; }
+
+        .filter-group-header {
+            padding: 8px 14px;
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            user-select: none;
+        }
+
+        .filter-group-header:hover { background: var(--hover-item); }
+
+        .filter-group-header .filter-group-arrow {
+            font-size: 10px;
+            transition: transform 0.2s;
+        }
+
+        .filter-group-header .filter-group-arrow.open { transform: rotate(180deg); }
+
+        .filter-group-body {
+            display: none;
+            padding: 6px 10px 10px;
+        }
+
+        .filter-group-body.open { display: block; }
+
+        .filter-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            margin: 3px 3px 3px 0;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .filter-chip:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .filter-chip.active {
+            background: var(--accent-bg);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .filter-chip input { display: none; }
+
+        .filter-actions {
+            padding: 8px 14px;
+            display: flex;
+            gap: 8px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .filter-action-btn {
+            flex: 1;
+            padding: 7px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .filter-action-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .filter-action-btn.reset { color: var(--text-muted); }
+        .filter-action-btn.reset:hover { color: var(--accent); }
+
+        .filter-match-count {
+            padding: 6px 14px;
+            font-size: 11px;
+            color: var(--text-muted);
+            background: var(--bg-tertiary);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .filter-match-count strong { color: var(--accent); }
+
+        /* Scrollbar for filter panel */
+        .left-panel { overflow-y: auto; scrollbar-width: thin; }
+        .filter-group-body { max-height: 180px; overflow-y: auto; scrollbar-width: thin; }
+
+        /* Search Results */
+        .search-results {
+            padding: 12px;
+            display: none;
+        }
+
+        .search-results.show {
+            display: block;
+        }
+
+        .search-results-header {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Right Panel - Detail */
+        .right-panel {
+            flex: 1;
+            min-width: 0;
+            background: var(--bg-tertiary);
+            overflow-y: auto;
+            padding: 20px;
+            transition: background 0.3s;
+        }
+
+        .detail-placeholder {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+        }
+
+        .detail-placeholder .icon {
+            font-size: 70px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .detail-placeholder p {
+            font-size: 15px;
+        }
+
+        .detail-content {
+            display: none;
+        }
+
+        .detail-content.show {
+            display: block;
+        }
+
+        .detail-header {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
+            padding: 20px 24px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            transition: background 0.3s;
+        }
+
+        .detail-header .standard-no {
+            font-size: 26px;
+            color: var(--accent);
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .detail-header .title {
+            font-size: 18px;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .detail-header .category-tag {
+            display: inline-block;
+            padding: 3px 12px;
+            background: var(--accent-bg);
+            color: var(--accent);
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .detail-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .detail-header .standard-no { flex: 1 1 auto; }
+        .detail-header .title { flex: 1 1 100%; }
+        .detail-header .category-tag { flex: 0 0 auto; }
+        .detail-header-actions { flex: 0 0 auto; }
+
+        .detail-fav-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .detail-fav-btn:hover {
+            background: rgba(255, 215, 0, 0.15);
+            border-color: #ffd700;
+            color: #ffd700;
+        }
+
+        .detail-fav-btn.favorited {
+            background: rgba(255, 215, 0, 0.15);
+            border-color: #ffd700;
+            color: #ffd700;
+        }
+
+        .detail-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .detail-card {
+            background: var(--bg-card);
+            border-radius: 10px;
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .detail-card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .detail-card h3 {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Dimensions Table */
+        .dim-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .dim-table th,
+        .dim-table td {
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--table-border);
+        }
+
+        .dim-table th {
+            color: var(--table-header);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .dim-table td {
+            color: var(--text-secondary);
+        }
+
+        .dim-table tr:nth-child(even) td {
+            background: var(--table-alt);
+        }
+
+        .dim-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* ===== SVG Drawing Area ===== */
+        .drawing-area {
+            background: var(--draw-bg);
+            border-radius: 8px;
+            padding: 16px;
+            min-height: 280px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .drawing-svg {
+            width: 100%;
+            height: auto;
+            max-height: 320px;
+        }
+
+        .drawing-svg .dim-line {
+            stroke: var(--draw-dim);
+            stroke-width: 0.8;
+            fill: none;
+        }
+
+        .drawing-svg .dim-arrow {
+            stroke: var(--draw-dim);
+            stroke-width: 0.8;
+            fill: none;
+        }
+
+        .drawing-svg .outline {
+            stroke: var(--draw-line);
+            stroke-width: 1.5;
+            fill: none;
+        }
+
+        .drawing-svg .fill-light {
+            stroke: var(--draw-line);
+            stroke-width: 1.2;
+            fill: rgba(233,69,96,0.08);
+        }
+
+        .drawing-svg .center-line {
+            stroke: var(--draw-dim);
+            stroke-width: 0.5;
+            stroke-dasharray: 4,3;
+            fill: none;
+        }
+
+        .drawing-svg .dim-text {
+            fill: var(--draw-dim);
+            font-size: 9px;
+            font-family: "Arial", sans-serif;
+        }
+
+        .drawing-svg .label-text {
+            fill: var(--draw-text);
+            font-size: 8px;
+            font-family: "Arial", sans-serif;
+        }
+
+        .drawing-svg .title-text {
+            fill: var(--accent);
+            font-size: 10px;
+            font-family: "Arial", sans-serif;
+            font-weight: bold;
+        }
+
+        .drawing-placeholder {
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .drawing-placeholder .icon {
+            font-size: 50px;
+            margin-bottom: 10px;
+            opacity: 0.4;
+        }
+
+        /* CAD Links */
+        .cad-links {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            padding: 4px 0;
+        }
+
+        .cad-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            background: var(--cad-bg);
+            border: 1px solid var(--cad-border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .cad-link:hover {
+            background: var(--accent-bg);
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        .cad-link .icon {
+            font-size: 18px;
+        }
+
+        .cad-link .platform {
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .cad-link .format {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        /* Description */
+        .description {
+            line-height: 1.8;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .tag {
+            padding: 4px 10px;
+            background: var(--tag-bg);
+            color: var(--tag-color);
+            border-radius: 6px;
+            font-size: 11px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 7px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--scrollbar-track);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-thumb);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Responsive - Mobile First */
+        @media (max-width: 1200px) {
+            .detail-body {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .main-container {
+                flex-direction: column;
+            }
+            .left-panel, .middle-panel {
+                width: 100%;
+                max-height: 28vh;
+            }
+            .header h1 span:last-of-type {
+                display: none;
+            }
+            .search-input {
+                width: 200px;
+            }
+        }
+
+        /* ===== Mobile: < 768px — Tab Navigation ===== */
+        @media (max-width: 768px) {
+            .main-container {
+                height: calc(100vh - 140px); /* account for header + bottom nav */
+                flex-direction: row;
+            }
+            .left-panel, .middle-panel, .right-panel {
+                position: absolute;
+                top: 95px;
+                left: 0;
+                right: 0;
+                bottom: 45px;
+                width: 100%;
+                height: auto;
+                max-height: none;
+                border-right: none;
+                z-index: 10;
+                transform: translateX(100%);
+                transition: transform 0.25s ease;
+            }
+            .left-panel.active-mobile, .middle-panel.active-mobile, .right-panel.active-mobile {
+                transform: translateX(0);
+            }
+            .left-panel { z-index: 30; }
+            .middle-panel { z-index: 20; }
+            .right-panel { z-index: 10; }
+
+            /* Bottom Tab Nav */
+            .mobile-nav {
+                display: flex !important;
+            }
+
+            /* Compact header on mobile */
+            .header {
+                padding: 8px 12px;
+                height: auto;
+                min-height: 50px;
+            }
+            .header h1 {
+                font-size: 14px;
+                gap: 6px;
+            }
+            .header h1 .icon {
+                font-size: 18px;
+            }
+            .header-right {
+                gap: 8px;
+            }
+            .search-container {
+                flex: 1;
+                max-width: 200px;
+            }
+            .search-input {
+                font-size: 13px;
+                padding: 6px 10px;
+                width: 100% !important;
+            }
+            .theme-toggle {
+                padding: 6px 8px;
+                font-size: 12px;
+            }
+            .stats-bar {
+                padding: 6px 12px;
+                gap: 8px;
+                font-size: 11px;
+                flex-wrap: wrap;
+            }
+
+            /* Panel titles mobile */
+            .panel-title {
+                font-size: 12px;
+                padding: 10px 12px;
+            }
+
+            /* Model items mobile */
+            .model-item {
+                padding: 10px 12px;
+            }
+            .model-item .standard {
+                font-size: 12px;
+            }
+            .model-item .name {
+                font-size: 11px;
+            }
+
+            /* Detail cards mobile */
+            .detail-card {
+                padding: 12px;
+            }
+            .detail-card h3 {
+                font-size: 13px;
+            }
+
+            /* Drawing area mobile */
+            .drawing-area {
+                min-height: 180px;
+            }
+
+            /* Dim table mobile */
+            .dim-table {
+                font-size: 11px;
+            }
+            .dim-table th, .dim-table td {
+                padding: 5px 6px;
+            }
+
+            /* Search results mobile */
+            .search-results {
+                padding: 8px;
+            }
+            .search-results-header {
+                font-size: 11px;
+            }
+        }
+
+        /* Mobile nav: hide on desktop */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 45px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            z-index: 100;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
+        }
+        .mobile-nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            font-size: 11px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 0.2s;
+            border: none;
+            background: none;
+        }
+        .mobile-nav-item.active {
+            color: var(--accent);
+        }
+        .mobile-nav-item .nav-icon {
+            font-size: 18px;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        /* Search History */
+        .search-history-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-top: 4px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .search-history-dropdown .history-header {
+            padding: 7px 12px;
+            font-size: 11px;
+            color: var(--text-muted);
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .search-history-dropdown .history-item {
+            padding: 9px 12px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+
+        .search-history-dropdown .history-item:hover {
+            background: var(--accent-bg);
+        }
+
+        .search-history-dropdown .history-clear {
+            padding: 7px 12px;
+            font-size: 11px;
+            color: var(--accent);
+            text-align: center;
+            cursor: pointer;
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+        }
+
+        .search-history-dropdown .history-clear:hover {
+            background: var(--accent-bg);
+        }
+    </style>
+</head>
+<body data-theme="dark">
+    <!-- Header -->
+    <header class="header">
+        <h1>
+            <span>🔩</span>
+            <span>机械标准件查询系统</span>
+            <span class="version">v3.9 | 27,851条 | 高级筛选</span>
+        </h1>
+        <div class="header-right">
+            <button class="compare-toggle-btn" id="compareToggleBtn" onclick="toggleComparePanel()">
+                <span>⚖️</span>
+                <span>对比</span>
+                <span class="badge" id="compareBadge">0</span>
+            </button>
+            <button class="compare-toggle-btn" id="favToggleBtn" onclick="toggleFavHistPanel('fav')">
+                <span>⭐</span>
+                <span>收藏</span>
+                <span class="badge" id="favBadge">0</span>
+            </button>
+            <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
+                <span class="icon" id="themeIcon">🌙</span>
+                <span id="themeLabel">深色</span>
+            </button>
+            <div class="search-container" style="position:relative;">
+                <input type="text" class="search-input" id="searchInput"
+                    placeholder="搜索标准号/名称/拼音，如：GB/T 5783、M10、luoshan..."
+                    onfocus="showSearchHistory()" onblur="setTimeout(hideSearchHistory, 200)"
+                    onkeypress="if(event.key==='Enter')searchStandard()">
+                <button class="search-btn" onclick="searchStandard()">🔍</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+        <div class="stat"><span class="label">总量:</span><span class="value" id="totalCount">-</span></div>
+        <div class="divider">|</div>
+        <div class="stat"><span class="label">紧固件:</span><span class="value" id="fastenerCount">-</span></div>
+        <div class="divider">|</div>
+        <div class="stat"><span class="label">法兰:</span><span class="value" id="flangeCount">-</span></div>
+        <div class="divider">|</div>
+        <div class="stat"><span class="label">垫片:</span><span class="value" id="gasketCount">-</span></div>
+        <div class="divider">|</div>
+        <div class="stat"><span class="label">轴承:</span><span class="value" id="bearingCount">-</span></div>
+    </div>
+
+    <!-- Main Content: 3 Panels -->
+    <div class="main-container">
+        <!-- Left: GB Categories -->
+        <aside class="left-panel" id="leftPanel">
+            <div class="panel-title">📂 标准件分类</div>
+            <div id="filterToggleBar" class="filter-toggle-bar" onclick="toggleFilterPanel()">
+                <span class="filter-toggle-label">
+                    🔍 高级筛选
+                    <span class="filter-badge" id="filterBadge">0</span>
+                </span>
+                <span class="filter-toggle-icon" id="filterToggleIcon">▼</span>
+            </div>
+            <div id="filterPanel" class="filter-panel">
+                <!-- Filter groups injected by JS -->
+            </div>
+            <div id="categoryList"></div>
+        </aside>
+
+        <!-- Middle: List -->
+        <section class="middle-panel" id="middlePanel">
+            <div class="panel-title" id="modelListTitle">← 选择左侧分类</div>
+            <div class="model-list" id="modelList">
+                <div style="padding:20px;color:var(--text-muted);text-align:center;font-size:13px;">
+                    请从左侧选择分类查看型号
+                </div>
+            </div>
+            <div class="search-results" id="searchResults">
+                <div class="search-results-header" id="searchResultsHeader"></div>
+                <div id="searchResultsList"></div>
+            </div>
+        </section>
+
+        <!-- Right: Detail -->
+        <section class="right-panel" id="detailPanel">
+            <div class="detail-placeholder" id="detailPlaceholder">
+                <div class="icon">📋</div>
+                <p>选择型号查看详情</p>
+            </div>
+
+            <div class="detail-content" id="detailContent">
+                <div class="detail-header">
+                    <div class="standard-no" id="detailStandardNo"></div>
+                    <div class="title" id="detailTitle"></div>
+                    <span class="category-tag" id="detailCategory"></span>
+                    <div class="detail-header-actions">
+                        <button class="detail-fav-btn" id="detailFavBtn" onclick="toggleFavoriteDetail()" title="收藏">
+                            ☆
+                        </button>
+                    </div>
+                </div>
+
+                <div class="detail-body">
+                    <!-- Drawing Card (Full Width Top) -->
+                    <div class="detail-card full-width">
+                        <h3>📐 简易图纸与尺寸标注</h3>
+                        <div class="drawing-area" id="drawingArea">
+                            <div class="drawing-placeholder">
+                                <div class="icon">📐</div>
+                                <p>点击左侧列表选择规格</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dimensions Table -->
+                    <div class="detail-card">
+                        <h3>📏 规格尺寸</h3>
+                        <table class="dim-table" id="dimTable"></table>
+                    </div>
+
+                    <!-- CAD Download -->
+                    <div class="detail-card">
+                        <h3>📥 CAD图纸下载</h3>
+                        <div class="cad-links" id="cadLinks"></div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="detail-card full-width">
+                        <h3>📝 说明与应用</h3>
+                        <div class="description" id="detailDescription"></div>
+                        <div class="tags" id="detailTags"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="standards_data.js"></script>
+    <script src="pdf_image_map.js"></script>
+    <script>
+    // ==================== Theme Toggle ====================
+    function toggleTheme() {
+        const body = document.body;
+        const icon = document.getElementById('themeIcon');
+        const label = document.getElementById('themeLabel');
+        if (body.getAttribute('data-theme') === 'dark') {
+            body.setAttribute('data-theme', 'light');
+            icon.textContent = '☀️';
+            label.textContent = '浅色';
+            localStorage.setItem('stdTheme', 'light');
+        } else {
+            body.setAttribute('data-theme', 'dark');
+            icon.textContent = '🌙';
+            label.textContent = '深色';
+            localStorage.setItem('stdTheme', 'dark');
+        }
+    }
+
+    // Restore theme
+    (function(){
+        const saved = localStorage.getItem('stdTheme');
+        if (saved === 'light') {
+            document.body.setAttribute('data-theme', 'light');
+            document.getElementById('themeIcon').textContent = '☀️';
+            document.getElementById('themeLabel').textContent = '浅色';
+        }
+    })();
+
+    // ==================== Categories ====================
+    const categories = [
+        { id: "fasteners", name: "紧固件", icon: "🔩", desc: "螺栓、螺钉、螺柱等" },
+        { id: "nuts", name: "螺母", icon: "🔧", desc: "六角螺母、锁紧螺母等" },
+        { id: "washers", name: "垫圈", icon: "◯", desc: "平垫圈、弹簧垫圈等" },
+        { id: "seals", name: "密封件", icon: "◯", desc: "O型圈、油封等" },
+        { id: "bearings", name: "轴承", icon: "◎", desc: "滚动轴承、滑动轴承等" },
+        { id: "gears", name: "齿轮", icon: "⚙", desc: "圆柱齿轮、锥齿轮等" },
+        { id: "springs", name: "弹簧", icon: "➿", desc: "压缩弹簧、拉伸弹簧等" },
+        { id: "keys", name: "键销", icon: "▭", desc: "平键、半圆键等" },
+        { id: "pipeFittings", name: "管接头", icon: "⟷", desc: "卡套式、焊接式管接头" },
+        { id: "flanges", name: "法兰", icon: "◯", desc: "法兰盘、法兰盖等" },
+        { id: "couplings", name: "联轴器", icon: "∞", desc: "刚性联轴器、弹性联轴器等" },
+        { id: "hydraulic", name: "液压气动", icon: "☰", desc: "液压缸、阀门等" },
+        { id: "rivets", name: "铆钉", icon: "◇", desc: "半圆头铆钉、平头铆钉等" },
+        { id: "gaskets", name: "垫片", icon: "▬", desc: "密封垫片、垫圈等" },
+        { id: "filters", name: "过滤器", icon: "网", desc: "液压过滤器、空气过滤器等" },
+        { id: "HG化工", name: "HG 化工", icon: "⚗", desc: "化工行业标准 940条" },
+        { id: "HB航空", name: "HB 航空", icon: "✈", desc: "航空行业标准 5298条" },
+        { id: "JB机械", name: "JB 机械", icon: "🔧", desc: "机械行业标准 15632条" }
+    ];
+
+    // ==================== Global State ====================
+    let currentCategory = null;
+    let currentStandardNo = null;
+    let groupedData = {};
+
+    // ==================== SVG Drawing Generator (v3.4 Enhanced) ====================
+    // Quality improvements: sectional hatching, thread notation, multi-view, proper dimension arrows
+
+    function generateDrawingSVG(item) {
+        const stdNo = item.standardNo || '';
+        const name = item.name || '';
+        const dims = item.dimensions || [];
+        const getDim = (key) => dims.find(x => x.param.includes(key)) || null;
+        const parseDim = (val) => {
+            if (!val) return null;
+            const m = String(val).match(/[\d.]+/);
+            return m ? parseFloat(m[0]) : null;
+        };
+
+        // Extract dimensions
+        let threadD = null, length = null, dk = null, k = null, s = null;
+        for (const dim of dims) {
+            const p = dim.param, v = dim.value;
+            if ((/螺纹规格|公称直径|M\d/.test(p) || /M\d/.test(String(v))) && !threadD) threadD = parseDim(v);
+            if (/长度|公称长度|l=/.test(p) && !length) length = parseDim(v);
+            if (/头部直径|dk/.test(p) && !dk) dk = parseDim(v);
+            if (/头部高度|k=/.test(p) && !k) k = parseDim(v);
+            if (/对边宽度|s=/.test(p) && !s) s = parseDim(v);
+        }
+
+        // Drawing area: 360x260 with title block at bottom
+        const W = 360, H = 270, TB_H = 28;
+        const DRAW_H = H - TB_H - 10;
+        let svg = `<svg class="drawing-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Sectional hatching pattern (45° cross-hatch) -->
+    <pattern id="hatch" patternUnits="userSpaceOnUse" width="4" height="4" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="4" stroke="var(--draw-line)" stroke-width="0.5" opacity="0.6"/>
+    </pattern>
+    <pattern id="hatch2" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="var(--draw-line)" stroke-width="0.4" opacity="0.5"/>
+      <line x1="0" y1="3" x2="0" y2="6" stroke="var(--draw-line)" stroke-width="0.4" opacity="0.3"/>
+    </pattern>
+    <!-- Arrow marker for dimension lines -->
+    <marker id="arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill="var(--draw-dim)"/>
+    </marker>
+    <marker id="arr2" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto">
+      <path d="M0,0 L5,2.5 L0,5 L1,2.5 Z" fill="var(--draw-dim)"/>
+    </marker>
+    <!-- Hidden line dash -->
+    <style>
+      .hl { stroke-dasharray: 3,2; }
+      .dim-lead { marker-end: url(#arr); marker-start: url(#arr2); }
+    </style>
+  </defs>`;
+
+        // === Helper: draw proper dimension line with arrows ===
+        const dim = (x1,y1,x2,y2,label,px,py,below) => {
+            const rot = Math.abs(x2-x1) < 1 ? 'rotate(-90,'+px+','+py+')' : '';
+            const textY = below ? py+12 : py-6;
+            return `<line class="dim-line" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>
+  <text class="dim-text" x="${px}" y="${textY}" text-anchor="middle" ${rot ? 'transform="'+rot+'"' : ''}>${label}</text>`;
+        };
+
+        // === Helper: draw thread lines (zigzag per GB standard) ===
+        const threadLines = (x1,x2,cy,r,count) => {
+            let t = '';
+            const pitch = (x2-x1)/count;
+            for(let i=0;i<count;i++){
+                const ax = x1+i*pitch;
+                t += `<line class="outline" x1="${ax}" y1="${cy-r}" x2="${ax+pitch*0.6}" y2="${cy+r}"/>`;
+            }
+            return t;
+        };
+
+        // === Helper: draw section hatching on a polygon ===
+        const sectionFill = (d, cls) =>
+            `<path class="${cls}" d="${d}" fill="url(#hatch)" stroke="none"/>`;
+
+        // === Hex Bolt (六角螺栓) ===
+        if (/螺栓|hex.*bolt/i.test(name) || /5782|5783|16674|3098/i.test(stdNo)) {
+            threadD = threadD || 10; length = length || 40;
+            dk = dk || threadD*1.7; k = k || threadD*0.65; s = s || threadD*1.5;
+            const sc = 2.5;
+            const shankR = threadD*sc/4;
+            const headH = k*sc*0.8;
+            const hexR = s*sc/4;
+            const bodyW = hexR*2.2;
+            const shankLen = Math.min(length*sc*0.75, W-bodyW-50);
+            const M = bodyW+18; // margin left
+            const cy = DRAW_H/2+5;
+            const threadCount = Math.min(8, Math.floor(shankLen/10));
+
+            // === Title block ===
+            svg += `<rect x="0" y="${DRAW_H+6}" width="${W}" height="${TB_H}" fill="var(--bg-secondary)" stroke="var(--draw-line)" stroke-width="0.8"/>
+  <text x="8" y="${DRAW_H+18}" class="title-text" font-size="9">${stdNo}</text>
+  <text x="8" y="${DRAW_H+27}" class="dim-text" font-size="7" fill="var(--draw-dim)">比例 2:1</text>
+  <text x="${W-5}" y="${DRAW_H+18}" class="label-text" text-anchor="end" font-size="8">六角头螺栓</text>`;
+
+            // === Main section: side view ===
+            // Body (hatched)
+            const bodyX = M, bodyY = cy-hexR*1.1;
+            svg += sectionFill(`M${bodyX} ${bodyY} h${bodyW*0.15} v${hexR*2.2} h${-bodyW*0.15} z`, 'fill-light');
+            // Body outline
+            svg += `<rect class="outline" x="${bodyX}" y="${bodyY}" width="${bodyW*0.15}" height="${hexR*2.2}" rx="0.5"/>`;
+            // Hex profile
+            svg += `<polygon class="outline" points="${bodyX},${cy-hexR*0.55} ${bodyX+bodyW*0.14},${cy-hexR*0.85} ${bodyX+bodyW*0.14},${cy+hexR*0.85} ${bodyX},${cy+hexR*0.55} ${bodyX-bodyW*0.05},${cy}"/>`;
+            // Chamfer ellipse
+            svg += `<ellipse class="outline" cx="${bodyX-bodyW*0.03}" cy="${cy}" rx="${hexR*0.55}" ry="${hexR*0.65}"/>`;
+            // Center marks
+            svg += `<line class="center-line" x1="${bodyX-bodyW*0.05}" y1="${cy}" x2="${bodyX+shankLen+20}" y2="${cy}"/>`;
+            svg += `<line class="center-line" x1="${bodyX+bodyW*0.07}" y1="${cy-shankR-8}" x2="${bodyX+bodyW*0.07}" y2="${cy+shankR+8}"/>`;
+
+            // === Shank (threaded portion) ===
+            svg += `<rect class="fill-light" x="${bodyX+bodyW*0.15}" y="${cy-shankR}" width="${shankLen}" height="${shankR*2}" fill="url(#hatch2)"/>`;
+            svg += `<line class="outline" x1="${bodyX+bodyW*0.15}" y1="${cy-shankR}" x2="${bodyX+bodyW*0.15+shankLen}" y2="${cy-shankR}"/>`;
+            svg += `<line class="outline" x1="${bodyX+bodyW*0.15}" y1="${cy+shankR}" x2="${bodyX+bodyW*0.15+shankLen}" y2="${cy+shankR}"/>`;
+            svg += threadLines(bodyX+bodyW*0.15, bodyX+bodyW*0.15+shankLen, cy, shankR, threadCount);
+            // Root diameter (hidden)
+            const rootR = threadD*0.75*sc/4;
+            svg += `<line class="hl" x1="${bodyX+bodyW*0.15}" y1="${cy-rootR}" x2="${bodyX+bodyW*0.15+shankLen}" y2="${cy-rootR}"/>`;
+            svg += `<line class="hl" x1="${bodyX+bodyW*0.15}" y1="${cy+rootR}" x2="${bodyX+bodyW*0.15+shankLen}" y2="${cy+rootR}"/>`;
+
+            // === Dimensions with proper arrows ===
+            const bx = bodyX+bodyW*0.07;
+            // d= (thread major diameter) - above
+            svg += `<line class="dim-line" x1="${bx-3}" y1="${cy-shankR-6}" x2="${bx+shankLen+3}" y2="${cy-shankR-6}"/>`;
+            svg += `<text class="dim-text" x="${bx+shankLen/2}" y="${cy-shankR-9}" text-anchor="middle">d=${threadD}</text>`;
+            // l= (length) - below
+            svg += `<line class="dim-line" x1="${bx}" y1="${cy+shankR+8}" x2="${bx+shankLen}" y2="${cy+shankR+8}"/>`;
+            svg += `<text class="dim-text" x="${bx+shankLen/2}" y="${cy+shankR+18}" text-anchor="middle">l=${length}</text>`;
+            // s= (width across flats)
+            svg += `<line class="dim-line" x1="${bodyX-hexR-8}" y1="${cy-hexR}" x2="${bodyX-hexR-8}" y2="${cy+hexR}"/>`;
+            svg += `<text class="dim-text" x="${bodyX-hexR-15}" y="${cy+3}" text-anchor="middle" transform="rotate(-90,${bodyX-hexR-15},${cy+3})">s=${s}</text>`;
+            // k= (head height)
+            svg += `<line class="dim-line" x1="${bodyX-hexR}" y1="${bodyY-8}" x2="${bodyX+hexR*0.15}" y2="${bodyY-8}"/>`;
+            svg += `<text class="dim-text" x="${bodyX+hexR*0.07}" y="${bodyY-12}" text-anchor="middle">k=${k}</text>`;
+        }
+        // === Hex Nut (六角螺母) ===
+        else if (/螺母|nut/i.test(name) || /6170|6172|6175/i.test(stdNo)) {
+            threadD = threadD || 10; s = s || threadD*1.5; k = k || threadD*0.8;
+            const sc = 2.8;
+            const hexR = s*sc/4;
+            const bodyH = hexR*2.2;
+            const innerR = threadD*sc*0.3;
+            const cx = W/2, cy = DRAW_H/2+5;
+            const bodyW = hexR*2.5;
+
+            // Title block
+            svg += `<rect x="0" y="${DRAW_H+6}" width="${W}" height="${TB_H}" fill="var(--bg-secondary)" stroke="var(--draw-line)" stroke-width="0.8"/>
+  <text x="8" y="${DRAW_H+18}" class="title-text" font-size="9">${stdNo}</text>
+  <text x="${W-5}" y="${DRAW_H+18}" class="label-text" text-anchor="end" font-size="8">六角螺母 A型</text>`;
+
+            // Body (hatched section)
+            svg += sectionFill(`M${cx-hexR} ${cy-hexR*1.1} h${bodyW} v${bodyH} h${-bodyW} z`, 'fill-light');
+            svg += `<rect class="outline" x="${cx-hexR}" y="${cy-hexR*1.1}" width="${bodyW}" height="${bodyH}" rx="1"/>`;
+            // Chamfer top
+            svg += `<path class="outline" d="M${cx-hexR} ${cy-hexR*1.1} Q${cx} ${cy-hexR*1.8} ${cx+hexR} ${cy-hexR*1.1}"/>`;
+            // Thread hole
+            svg += `<circle class="outline" cx="${cx}" cy="${cy}" r="${innerR}"/>`;
+            svg += `<circle cx="${cx}" cy="${cy}" r="${innerR*0.35}" stroke-width="0.8" stroke="var(--draw-line)" fill="none"/>`;
+            // Center lines
+            svg += `<line class="center-line" x1="${cx-hexR-5}" y1="${cy}" x2="${cx+hexR+5}" y2="${cy}"/>`;
+            svg += `<line class="center-line" x1="${cx}" y1="${cy-hexR-5}" x2="${cx}" y2="${cy+hexR+5}"/>`;
+
+            // Dimensions
+            // s=
+            svg += `<line class="dim-line" x1="${cx+hexR+6}" y1="${cy-hexR*1.1}" x2="${cx+hexR+6}" y2="${cy+hexR*1.1}"/>`;
+            svg += `<text class="dim-text" x="${cx+hexR+14}" y="${cy+3}" text-anchor="middle">s=${s}</text>`;
+            // k=
+            svg += `<line class="dim-line" x1="${cx-hexR}" y1="${cy-hexR*1.4}" x2="${cx+hexR}" y2="${cy-hexR*1.4}"/>`;
+            svg += `<text class="dim-text" x="${cx}" y="${cy-hexR*1.5}" text-anchor="middle">m=${k}</text>`;
+            // d=
+            svg += `<text class="dim-text" x="${cx}" y="${cy-innerR-5}" text-anchor="middle">d=${threadD}</text>`;
+        }
+        // === Washer (垫圈 A型) ===
+        else if (/垫圈|washer/i.test(name) || /95\.|96\.|97\./i.test(stdNo)) {
+            const d1 = getDim('内径') || threadD || 10;
+            const d2 = getDim('外径') || d1*2.2;
+            const th = getDim('厚度') || (d1<10?1.6:2.5);
+            const sc = Math.min(220/Math.max(d2,20), 4);
+            const r1 = d2*sc/4, r2 = d1*sc/4;
+            const cx = W/2, cy = DRAW_H/2;
+            const hscale = 5;
+
+            // Title block
+            svg += `<rect x="0" y="${DRAW_H+6}" width="${W}" height="${TB_H}" fill="var(--bg-secondary)" stroke="var(--draw-line)" stroke-width="0.8"/>
+  <text x="8" y="${DRAW_H+18}" class="title-text" font-size="9">${stdNo}</text>
+  <text x="${W-5}" y="${DRAW_H+18}" class="label-text" text-anchor="end" font-size="8">平垫圈</text>`;
+
+            // Top view: annular ring
+            svg += `<circle class="fill-light" cx="${cx-45}" cy="${cy}" r="${r1}" fill="url(#hatch)"/>`;
+            svg += `<circle class="outline" cx="${cx-45}" cy="${cy}" r="${r1}"/>`;
+            svg += `<circle cx="${cx-45}" cy="${cy}" r="${r2}" stroke-width="1" stroke="var(--draw-line)" fill="var(--bg-primary)"/>`;
+            svg += `<line class="center-line" x1="${cx-45-r1-5}" y1="${cy}" x2="${cx-45+r1+5}" y2="${cy}"/>`;
+            svg += `<line class="center-line" x1="${cx-45}" y1="${cy-r1-5}" x2="${cx-45}" y2="${cy+r1+5}"/>`;
+
+            // Side view
+            const sx = cx+15;
+            svg += `<path class="fill-light" d="M${sx-r1} ${cy} L${sx-r1} ${cy+hscale*th} L${sx+r1} ${cy+hscale*th} L${sx+r1} ${cy}" fill="url(#hatch)"/>`;
+            svg += `<line class="outline" x1="${sx-r1}" y1="${cy}" x2="${sx-r1}" y2="${cy+hscale*th}"/>`;
+            svg += `<line class="outline" x1="${sx+r1}" y1="${cy}" x2="${sx+r1}" y2="${cy+hscale*th}"/>`;
+            svg += `<line class="outline" x1="${sx-r1}" y1="${cy+hscale*th}" x2="${sx+r1}" y2="${cy+hscale*th}"/>`;
+            // Inner bore
+            svg += `<line class="outline" x1="${sx-r2}" y1="${cy}" x2="${sx-r2}" y2="${cy+hscale*th}"/>`;
+            svg += `<line class="outline" x1="${sx+r2}" y1="${cy}" x2="${sx+r2}" y2="${cy+hscale*th}"/>`;
+            // Top/bottom ellipses
+            svg += `<ellipse class="outline" cx="${sx}" cy="${cy}" rx="${r1}" ry="${r1*0.18}"/>`;
+            svg += `<ellipse class="outline" cx="${sx}" cy="${cy+hscale*th}" rx="${r1}" ry="${r1*0.18}"/>`;
+            svg += `<ellipse cx="${sx}" cy="${cy}" rx="${r2}" ry="${r2*0.15}" stroke-width="0.7" stroke="var(--draw-line)" fill="none" stroke-dasharray="2,2"/>`;
+
+            // Dimensions
+            svg += `<line class="dim-line" x1="${cx-45}" y1="${cy-r1-8}" x2="${cx-45}" y2="${cy-r1-18}"/>`;
+            svg += `<line class="dim-line" x1="${cx-45-r1}" y1="${cy-r1-18}" x2="${cx-45+r1}" y2="${cy-r1-18}"/>`;
+            svg += `<line class="dim-line" x1="${cx-45-r1}" y1="${cy-r1-16}" x2="${cx-45-r1}" y2="${cy-r1-20}"/>`;
+            svg += `<line class="dim-line" x1="${cx-45+r1}" y1="${cy-r1-16}" x2="${cx-45+r1}" y2="${cy-r1-20}"/>`;
+            svg += `<text class="dim-text" x="${cx-45}" y="${cy-r1-22}" text-anchor="middle">d2=${d2}</text>`;
+            // d1
+            svg += `<line class="dim-line" x1="${sx-r2-6}" y1="${cy+hscale*th/2}" x2="${sx+r2+6}" y2="${cy+hscale*th/2}"/>`;
+            svg += `<text class="dim-text" x="${sx}" y="${cy+hscale*th/2+14}" text-anchor="middle">d1=${d1}</text>`;
+            // h
+            svg += `<line class="dim-line" x1="${sx+r1+5}" y1="${cy}" x2="${sx+r1+5}" y2="${cy+hscale*th}"/>`;
+            svg += `<text class="dim-text" x="${sx+r1+13}" y="${cy+hscale*th/2+3}">h=${th}</text>`;
+        }
+        // === Spring Washer (弹簧垫圈 GB93) ===
+        else if (/弹簧垫圈|spring.*washer/i.test(name) || /93\.|7244/i.test(stdNo)) {
+            const d1 = getDim('内径') || threadD || 10;
+            const d2 = getDim('外径') || d1*1.8;
+            const th = getDim('厚度') || 2.5;
+            const sc = Math.min(200/Math.max(d2,15), 4.5);
+            const r1 = d2*sc/4, r2 = d1*sc/4;
+            const cx = W/2, cy = DRAW_H/2;
+            const hscale = 6;
+
+            svg += `<rect x="0" y="${DRAW_H+6}" width="${W}" height="${TB_H}" fill="var(--bg-secondary)" stroke="var(--draw-line)" stroke-width="0.8"/>
+  <text x="8" y="${DRAW_H+18}" class="title-text" font-size="9">${stdNo}</text>
+  <text x="${W-5}" y="${DRAW_H+18}" class="label-text" text-anchor="end" font-size="8">弹簧垫圈</text>`;
+
+            // Side view with sawtooth
+            svg += `<line class="center-line" x1="${cx-r1-8}" y1="${cy}" x2="${cx+r1+8}" y2="${cy}"/>`;
+            svg += `<path class="fill-light" d="M${cx-r1} ${cy} L${cx-r1} ${cy+hscale*th} L${cx+r1} ${cy+hscale*th} L${cx+r1} ${cy}" fill="url(#hatch)"/>`;
+            svg += `<line class="outline" x1="${cx-r1}" y1="${cy+hscale*th}" x2="${cx+r1}" y2="${cy+hscale*th}"/>`;
+            svg += `<line class="outline" x1="${cx-r1}" y1="${cy}" x2="${cx-r1}" y2="${cy+hscale*th}"/>`;
+            svg += `<line class="outline" x1="${cx+r1}" y1="${cy}" x2="${cx+r1}" y2="${cy+hscale*th}"/>`;
+            // Inner bore
+            svg += `<circle class="outline" cx="${cx}" cy="${cy+hscale*th/2}" r="${r2}"/>`;
+            // Sawtooth wave on top
+            const teeth = 10;
+            let wavePath = `M${cx-r1} ${cy}`;
+            for(let i=0;i<=teeth;i++){
+                const x = cx-r1 + i*(r1*2/teeth);
+                const y = cy + (i%2===0 ? 0 : hscale*0.7);
+                wavePath += ` L${x} ${y}`;
+            }
+            wavePath += ` L${cx+r1} ${cy}`;
+            svg += `<path class="outline" d="${wavePath}"/>`;
+
+            // Dimensions
+            svg += `<line class="dim-line" x1="${cx-r1}" y1="${cy-6}" x2="${cx+r1}" y2="${cy-6}"/>`;
+            svg += `<text class="dim-text" x="${cx}" y="${cy-9}" text-anchor="middle">d2=${d2}</text>`;
+            svg += `<line class="dim-line" x1="${cx+r1+5}" y1="${cy}" x2="${cx+r1+5}" y2="${cy+hscale*th}"/>`;
+            svg += `<text class="dim-text" x="${cx+r1+13}" y="${cy+hscale*th/2+3}">h=${th}</text>`;
+            svg += `<line class="dim-line" x1="${cx-r2-5}" y1="${cy+hscale*th/2}" x2="${cx+r2+5}" y2="${cy+hscale*th/2}"/>`;
+            svg += `<text class="dim-text" x="${cx}" y="${cy+hscale*th/2+12}" text-anchor="middle">d1=${d1}</text>`;
+        }
+        // === Cylindrical Head Screw (内六角圆柱头螺钉 GB/T70.1) ===
+        else if (/圆柱头螺钉|socket.*head.*cap/i.test(name) || /70\.[123]/i.test(stdNo)) {
+            threadD = threadD || 10; length = length || 30;
+            dk = dk || threadD*2.5; k = k || threadD; s = s || threadD*0.8;
+            const sc = 2.5;
+            const shankR = threadD*sc/4;
+            const headR = dk*sc/3.5;
+            const headW = headR*0.75;
+            const shankLen = Math.min(length*sc*0.7, W-headW-60);
+            const bx = headW+20, cy = DRAW_H/2;
+
+            svg += `<rect x="0" y="${DRAW_H+6}" width="${W}" height="${TB_H}" fill="var(--bg-secondary)" stroke="var(--draw-line)" stroke-width="0.8"/>
+  <text x="8" y="${DRAW_H+18}" class="title-text" font-size="9">${stdNo}</text>
+  <text x="${W-5}" y="${DRAW_H+18}" class="label-text" text-anchor="end" font-size="8">内六角圆柱头螺钉</text>`;
+
+            // Center lines
+            svg += `<line class="center-line" x1="${bx-5}" y1="${cy}" x2="${bx+shankLen+20}" y2="${cy}"/>`;
+            svg += `<line class="center-line" x1="${bx+headW*0.4}" y1="${cy-shankR-8}" x2="${bx+headW*0.4}" y2="${cy+shankR+8}"/>`;
+
+            // Cylindrical head (hatched)
+            svg += sectionFill(`M${bx-headW*0.4} ${cy-headR*0.5} h${headW} v${headR} h${-headW} z`, 'fill-light');
+            svg += `<rect class="outline" x="${bx-headW*0.4}" y="${cy-headR*0.5}" width="${headW}" height="${headR}" rx="1"/>`;
+            svg += `<ellipse class="outline" cx="${bx-headW*0.4}" cy="${cy-headR*0.5}" rx="${headW*0.5}" ry="${headR*0.15}"/>`;
+            svg += `<ellipse class="outline" cx="${bx-headW*0.4}" cy="${cy+headR*0.5}" rx="${headW*0.5}" ry="${headR*0.15}"/>`;
+            // Socket hex
+            const sokR = s*sc/3;
+            svg += `<polygon class="outline" points="${bx-headW*0.2},${cy-sokR*0.5} ${bx-headW*0.2+sokR*0.8},${cy-sokR*0.7} ${bx-headW*0.2+sokR*0.8},${cy+sokR*0.7} ${bx-headW*0.2},${cy+sokR*0.5}"/>`;
+            svg += `<circle class="outline" cx="${bx-headW*0.2+sokR*0.4}" cy="${cy}" r="${sokR*0.28}"/>`;
+
+            // Shank
+            svg += `<rect class="fill-light" x="${bx+headW*0.6}" y="${cy-shankR}" width="${shankLen}" height="${shankR*2}" fill="url(#hatch2)"/>`;
+            svg += `<line class="outline" x1="${bx+headW*0.6}" y1="${cy-shankR}" x2="${bx+headW*0.6+shankLen}" y2="${cy-shankR}"/>`;
+            svg += `<line class="outline" x1="${bx+headW*0.6}" y1="${cy+shankR}" x2="${bx+headW*0.6+shankLen}" y2="${cy+shankR}"/>`;
+            svg += threadLines(bx+headW*0.6, bx+headW*0.6+shankLen, cy, shankR, 6);
+
+            // Dimensions
+            svg += `<line class="dim-line" x1="${bx+headW*0.6}" y1="${cy+shankR+8}" x2="${bx+headW*0.6+shankLen}" y2="${cy+shankR+8}"/>`;
+            svg += `<text class="dim-text" x="${bx+headW*0.6+shankLen/2}" y="${cy+shankR+18}" text-anchor="middle">l=${length}</text>`;
+            svg += `<line class="dim-line" x1="${bx-headW*0.4-5}" y1="${cy-headR*0.5}" x2="${bx-headW*0.4-5}" y2="${cy+headR*0.5}"/>`;
+            svg += `<text class="dim-text" x="${bx-headW*0.4-12}" y="${cy+3}" text-anchor="middle" transform="rotate(-90,${bx-headW*0.4-12},${cy+3})">dk=${dk}</text>`;
+            svg += `<line class="dim-line" x1="${bx-headW*0.4}" y1="${cy-headR-7}" x2="${bx+headW*0.6}" y2="${cy-headR-7}"/>`;
+            svg += `<text class="dim-text" x="${bx+headW*0.1}" y="${cy-headR-10}" text-anchor="middle">k=${k}</text>`;
+            svg += `<line class="dim-line" x1="${bx+headW*0.6-5}" y1="${cy-shankR}" x2="${bx+headW*0.6+shankLen+5}" y2="${cy-shankR}"/>`;
+            svg += `<text class="dim-text" x="${bx+headW*0.6+shankLen/2}" y="${cy-shankR-6}" text-anchor="middle">d=${threadD}</text>`;
+        }
+        // === Bearing (轴承) ===
+        else if (/轴承|bearing/i.test(name) || /27680|27696|297|308/i.test(stdNo)) {
+            const bore = getDim('内径') || 30;
+            const od = getDim('外径') || 62;
+            const width = getDim('宽度') || 16;
+            const sc = Math.min(180/Math.max(od,20), 4);
+            const r1 = od*sc/4, r2 = bore*sc/4;
+            const cx = W/2, cy = DRAW_H/2;
+
+            svg += `<rect x="0" y="${DRAW_H+6}" width="${W}" height="${TB_H}" fill="var(--bg-secondary)" stroke="var(--draw-line)" stroke-width="0.8"/>
+  <text x="8" y="${DRAW_H+18}" class="title-text" font-size="9">${stdNo}</text>
+  <text x="${W-5}" y="${DRAW_H+18}" class="label-text" text-anchor="end" font-size="8">深沟球轴承</text>`;
+
+            // Top view (left)
+            svg += `<circle class="fill-light" cx="${cx-50}" cy="${cy}" r="${r1}" fill="url(#hatch)"/>`;
+            svg += `<circle class="outline" cx="${cx-50}" cy="${cy}" r="${r1}"/>`;
+            svg += `<circle cx="${cx-50}" cy="${cy}" r="${r2}" stroke-width="1.2" stroke="var(--draw-line)" fill="var(--bg-primary)"/>`;
+            // Rolling elements
+            const nEl = Math.max(8, Math.floor((r1-r2)/4));
+            for(let i=0;i<nEl;i++){
+                const a=(i/nEl)*Math.PI*2;
+                const ex=cx-50+Math.cos(a)*(r1+r2)/2, ey=cy+Math.sin(a)*(r1+r2)/2;
+                svg += `<circle cx="${ex}" cy="${ey}" r="${(r1-r2)/5}" stroke-width="0.7" stroke="var(--draw-line)" fill="rgba(233,69,96,0.2)"/>`;
+            }
+            svg += `<line class="center-line" x1="${cx-50-r1-5}" y1="${cy}" x2="${cx-50+r1+5}" y2="${cy}"/>`;
+            svg += `<line class="center-line" x1="${cx-50}" y1="${cy-r1-5}" x2="${cx-50}" y2="${cy+r1+5}"/>`;
+
+            // Side view (right)
+            const sx=cx+20, sw=r1*1.6, sh=width*sc*0.6;
+            svg += `<rect class="fill-light" x="${sx}" y="${cy-sh/2}" width="${sw}" height="${sh}" rx="${r1/8}" fill="url(#hatch)"/>`;
+            svg += `<rect class="outline" x="${sx}" y="${cy-sh/2}" width="${sw}" height="${sh}" rx="${r1/8}"/>`;
+            svg += `<circle cx="${sx+r1/8}" cy="${cy}" r="${r2}"/>`;
+            svg += `<line class="center-line" x1="${sx-5}" y1="${cy}" x2="${sx+sw+5}" y2="${cy}"/>`;
+
+            // Dimensions
+            svg += `<line class="dim-line" x1="${cx-50-r1-5}" y1="${cy+r1+8}" x2="${cx-50+r1/2}" y2="${cy+r1+8}"/>`;
+            svg += `<text class="dim-text" x="${cx-50+r1/4}" y="${cy+r1+18}" text-anchor="middle">D=${od}</text>`;
+            svg += `<line class="dim-line" x1="${cx-50-r2-6}" y1="${cy-r2}" x2="${cx-50-r2-6}" y2="${cy+r2}"/>`;
+            svg += `<text class="dim-text" x="${cx-50-r2-14}" y="${cy+3}" text-anchor="middle">d=${bore}</text>`;
+            svg += `<line class="dim-line" x1="${sx+sw+5}" y1="${cy-sh/2}" x2="${sx+sw+5}" y2="${cy+sh/2}"/>`;
+            svg += `<text class="dim-text" x="${sx+sw+13}" y="${cy+3}">B=${width}</text>`;
+        }
+        // === Spring (弹簧) ===
+        else if (/弹簧|spring/i.test(name) || /2089|2799|2164/i.test(stdNo)) {
+            const od = getDim('外径') || 30;
+            const wire = getDim('线径') || 3;
+            const freeL = getDim('自由高度') || 60;
+            const turns = getDim('有效圈数') || 8;
+            const sc = Math.min(180/Math.max(od,15), 4);
+            const r = od*sc/4;
+            const totalH = Math.min(freeL*1.5, DRAW_H-30);
+            const pitch = totalH/(turns+2);
+            const cx = W/2, cy = DRAW_H/2;
+
+            svg += `<rect x="0" y="${DRAW_H+6}" width="${W}" height="${TB_H}" fill="var(--bg-secondary)" stroke="var(--draw-line)" stroke-width="0.8"/>
+  <text x="8" y="${DRAW_H+18}" class="title-text" font-size="9">${stdNo}</text>
+  <text x="${W-5}" y="${DRAW_H+18}" class="label-text" text-anchor="end" font-size="8">压缩弹簧</text>`;
+
+            // Helix spring
+            const stY = cy+totalH/2-pitch;
+            let springPath = `M${cx+r} ${stY}`;
+            for(let i=0;i<=turns*2;i++){
+                const y = stY - i*pitch;
+                const x = cx + (i%2===0 ? r : -r)*0.75;
+                springPath += ` L${x} ${y}`;
+            }
+            springPath += ` L${cx+r} ${cy-totalH/2+pitch}`;
+            svg += `<path class="outline" d="${springPath}" stroke-width="${wire*0.6}" fill="none"/>`;
+            // End coils
+            svg += `<ellipse class="outline" cx="${cx}" cy="${stY+pitch*0.5}" rx="${r*0.3}" ry="${pitch*0.35}" stroke-width="${wire*0.5}"/>`;
+            svg += `<ellipse class="outline" cx="${cx}" cy="${cy-totalH/2+pitch*0.5}" rx="${r*0.3}" ry="${pitch*0.35}" stroke-width="${wire*0.5}"/>`;
+            svg += `<line class="center-line" x1="${cx}" y1="${cy-r-5}" x2="${cx}" y2="${cy+r+5}"/>`;
+
+            // Dimensions
+            svg += `<line class="dim-line" x1="${cx+r+6}" y1="${cy-totalH/2}" x2="${cx+r+6}" y2="${cy+totalH/2}"/>`;
+            svg += `<text class="dim-text" x="${cx+r+14}" y="${cy+3}">H=${freeL}</text>`;
+            svg += `<line class="dim-line" x1="${cx-r-6}" y1="${stY}" x2="${cx+r+6}" y2="${stY}"/>`;
+            svg += `<text class="dim-text" x="${cx}" y="${stY-4}" text-anchor="middle">D=${od}</text>`;
+            svg += `<text class="dim-text" x="${cx+r+14}" y="${cy-totalH/2+10}" font-size="7">n=${turns}</text>`;
+        }
+        // === Rivet (铆钉) ===
+        else if (/铆钉|rivet/i.test(name) || /867|871|869/i.test(stdNo)) {
+            threadD = threadD || 6; length = length || 20;
+            const dk = threadD*1.8;
+            const sc = 3;
+            const shankR = threadD*sc/4;
+            const headR = dk*sc/3;
+            const shankLen = Math.min(length*sc*0.8, W/2-30);
+            const cx = W/2, cy = DRAW_H/2;
+
+            svg += `<rect x="0" y="${DRAW_H+6}" width="${W}" height="${TB_H}" fill="var(--bg-secondary)" stroke="var(--draw-line)" stroke-width="0.8"/>
+  <text x="8" y="${DRAW_H+18}" class="title-text" font-size="9">${stdNo}</text>
+  <text x="${W-5}" y="${DRAW_H+18}" class="label-text" text-anchor="end" font-size="8">半圆头铆钉</text>`;
+
+            svg += `<line class="center-line" x1="${cx-5}" y1="${cy}" x2="${cx+shankLen+25}" y2="${cy}"/>`;
+            svg += `<line class="center-line" x1="${cx}" y1="${cy-shankR-8}" x2="${cx}" y2="${cy+shankR+8}"/>`;
+            // Rivet head (dome)
+            svg += sectionFill(`M${cx} ${cy} Q${cx-headR*0.3} ${cy-headR*1.2} ${cx-headR} ${cy-headR*0.6} Q${cx} ${cy-headR*1.8} ${cx+headR*0.2} ${cy}`, 'fill-light');
+            svg += `<path class="outline" d="M${cx} ${cy} Q${cx-headR*0.3} ${cy-headR*1.2} ${cx-headR} ${cy-headR*0.6} Q${cx} ${cy-headR*1.8} ${cx+headR*0.2} ${cy}"/>`;
+            // Shank
+            svg += `<rect class="fill-light" x="${cx}" y="${cy-shankR}" width="${shankLen}" height="${shankR*2}" fill="url(#hatch2)"/>`;
+            svg += `<line class="outline" x1="${cx}" y1="${cy-shankR}" x2="${cx+shankLen}" y2="${cy-shankR}"/>`;
+            svg += `<line class="outline" x1="${cx}" y1="${cy+shankR}" x2="${cx+shankLen}" y2="${cy+shankR}"/>`;
+            svg += `<line class="outline" x1="${cx+shankLen}" y1="${cy-shankR}" x2="${cx+shankLen}" y2="${cy+shankR}"/>`;
+            svg += threadLines(cx, cx+shankLen, cy, shankR, 5);
+
+            // Dimensions
+            svg += `<line class="dim-line" x1="${cx}" y1="${cy+shankR+8}" x2="${cx+shankLen}" y2="${cy+shankR+8}"/>`;
+            svg += `<text class="dim-text" x="${cx+shankLen/2}" y="${cy+shankR+18}" text-anchor="middle">l=${length}</text>`;
+            svg += `<line class="dim-line" x1="${cx-headR-5}" y1="${cy-headR*0.5}" x2="${cx-headR-5}" y2="${cy+shankR}"/>`;
+            svg += `<text class="dim-text" x="${cx-headR-12}" y="${cy}" text-anchor="middle">dk=${dk}</text>`;
+            svg += `<line class="dim-line" x1="${cx-5}" y1="${cy-shankR}" x2="${cx+shankLen+5}" y2="${cy-shankR}"/>`;
+            svg += `<text class="dim-text" x="${cx+shankLen/2}" y="${cy-shankR-6}" text-anchor="middle">d=${threadD}</text>`;
+        }
+        // === Flange (法兰) ===
+        else if (/法兰|flange/i.test(name) || /20592|20615|20672/i.test(stdNo)) {
+            const dn = getDim('公称通径') || 50;
+            const pn = getDim('公称压力') || 16;
+            const D = Math.min(dn*1.6+25, 130);
+            const k = Math.min(D*0.78, 95);
+            const b = Math.min(D*0.28+8, 22);
+            const innerD = Math.min(dn*0.6, 40);
+            const cx = W/2, cy = DRAW_H/2;
+            const sc = 1.8;
+
+            svg += `<rect x="0" y="${DRAW_H+6}" width="${W}" height="${TB_H}" fill="var(--bg-secondary)" stroke="var(--draw-line)" stroke-width="0.8"/>
+  <text x="8" y="${DRAW_H+18}" class="title-text" font-size="9">${stdNo}</text>
+  <text x="${W-5}" y="${DRAW_H+18}" class="label-text" text-anchor="end" font-size="8">板式平焊法兰 PN${pn} DN${dn}</text>`;
+
+            // Top view (left) - circular with bolt holes
+            const vr = D*sc/2;
+            svg += `<circle class="fill-light" cx="${cx-55}" cy="${cy}" r="${vr}" fill="url(#hatch)"/>`;
+            svg += `<circle class="outline" cx="${cx-55}" cy="${cy}" r="${vr}"/>`;
+            svg += `<circle cx="${cx-55}" cy="${cy}" r="${innerD*sc/2}" stroke-width="1" stroke="var(--draw-line)" fill="var(--bg-primary)"/>`;
+            const nBolts = Math.max(4, Math.floor(dn/12));
+            const boltR = k*sc/2;
+            for(let i=0;i<nBolts;i++){
+                const a=(i/nBolts)*Math.PI*2;
+                const bx=cx-55+Math.cos(a)*boltR, by=cy+Math.sin(a)*boltR;
+                svg += `<circle cx="${bx}" cy="${by}" r="3.5" stroke-width="1" stroke="var(--draw-line)" fill="none"/>`;
+            }
+            svg += `<circle cx="${cx-55}" cy="${cy}" r="${boltR}" stroke-width="0.5" stroke="var(--draw-dim)" fill="none" stroke-dasharray="2,2"/>`;
+            svg += `<line class="center-line" x1="${cx-55-vr-5}" y1="${cy}" x2="${cx-55+vr+5}" y2="${cy}"/>`;
+
+            // Side view (right)
+            const sx=cx+15, sw=55, sh=D*sc*0.45;
+            svg += `<rect class="fill-light" x="${sx}" y="${cy-sh/2}" width="${sw}" height="${sh}" rx="1" fill="url(#hatch)"/>`;
+            svg += `<rect class="outline" x="${sx}" y="${cy-sh/2}" width="${sw}" height="${sh}" rx="1"/>`;
+            svg += `<ellipse cx="${sx}" cy="${cy}" rx="${boltR}" ry="${b*sc*0.4}" stroke-width="0.8" stroke="var(--draw-line)" fill="none"/>`;
+            svg += `<ellipse cx="${sx+sw}" cy="${cy}" rx="${boltR}" ry="${b*sc*0.4}" stroke-width="0.8" stroke="var(--draw-line)" fill="none"/>`;
+            svg += `<line class="center-line" x1="${sx-5}" y1="${cy}" x2="${sx+sw+5}" y2="${cy}"/>`;
+
+            // Dimensions
+            svg += `<line class="dim-line" x1="${cx-55-vr-5}" y1="${cy+vr+8}" x2="${cx-55+vr/2}" y2="${cy+vr+8}"/>`;
+            svg += `<text class="dim-text" x="${cx-55}" y="${cy+vr+18}" text-anchor="middle">D=${D}</text>`;
+            svg += `<line class="dim-line" x1="${cx-55-boltR-5}" y1="${cy-boltR}" x2="${cx-55-boltR-5}" y2="${cy+boltR}"/>`;
+            svg += `<text class="dim-text" x="${cx-55-boltR-14}" y="${cy+3}" text-anchor="middle">K=${k}</text>`;
+            svg += `<line class="dim-line" x1="${sx+sw+5}" y1="${cy-sh/2}" x2="${sx+sw+5}" y2="${cy+sh/2}"/>`;
+            svg += `<text class="dim-text" x="${sx+sw+13}" y="${cy+3}">b=${b}</text>`;
+        }
+        // === Gasket (垫片) ===
+        else if (/垫片|gasket/i.test(name) || /20606|20607|20590/i.test(stdNo)) {
+            const dn = getDim('公称通径') || 50;
+            const D4 = Math.min(dn*1.4+18, 130);
+            const D3 = Math.min(D4*0.88, 110);
+            const d = Math.min(D4*0.65, 80);
+            const th = 3;
+            const sc = Math.min(200/D4, 4);
+            const r1=D4*sc/4, r2=D3*sc/4, r3=d*sc/4;
+            const cx = W/2, cy = DRAW_H/2;
+            const hsc = 7;
+
+            svg += `<rect x="0" y="${DRAW_H+6}" width="${W}" height="${TB_H}" fill="var(--bg-secondary)" stroke="var(--draw-line)" stroke-width="0.8"/>
+  <text x="8" y="${DRAW_H+18}" class="title-text" font-size="9">${stdNo}</text>
+  <text x="${W-5}" y="${DRAW_H+18}" class="label-text" text-anchor="end" font-size="8">非金属平垫片 DN${dn}</text>`;
+
+            // Top view
+            svg += `<circle class="fill-light" cx="${cx-45}" cy="${cy}" r="${r1}" fill="rgba(233,69,96,0.08)"/>`;
+            svg += `<circle class="outline" cx="${cx-45}" cy="${cy}" r="${r1}"/>`;
+            svg += `<circle cx="${cx-45}" cy="${cy}" r="${r2}" stroke-width="1.2" stroke="var(--draw-line)" fill="rgba(0,0,0,0.15)"/>`;
+            svg += `<circle class="outline" cx="${cx-45}" cy="${cy}" r="${r3}"/>`;
+            svg += `<line class="center-line" x1="${cx-45-r1-5}" y1="${cy}" x2="${cx-45+r1+5}" y2="${cy}"/>`;
+            svg += `<line class="center-line" x1="${cx-45}" y1="${cy-r1-5}" x2="${cx-45}" y2="${cy+r1+5}"/>`;
+
+            // Side view
+            const sx=cx+15;
+            svg += `<rect class="fill-light" x="${sx-r1}" y="${cy+hsc}" width="${r1*2}" height="${hsc*th}" rx="1" fill="rgba(233,69,96,0.1)"/>`;
+            svg += `<rect class="outline" x="${sx-r1}" y="${cy+hsc}" width="${r1*2}" height="${hsc*th}" rx="1"/>`;
+            svg += `<line class="outline" x1="${sx-r2}" y1="${cy+hsc}" x2="${sx-r2}" y2="${cy+hsc+hsc*th}"/>`;
+            svg += `<line class="outline" x1="${sx+r2}" y1="${cy+hsc}" x2="${sx+r2}" y2="${cy+hsc+hsc*th}"/>`;
+            svg += `<line class="outline" x1="${sx-r3}" y1="${cy+hsc}" x2="${sx-r3}" y2="${cy+hsc+hsc*th}"/>`;
+            svg += `<line class="outline" x1="${sx+r3}" y1="${cy+hsc}" x2="${sx+r3}" y2="${cy+hsc+hsc*th}"/>`;
+
+            // Dimensions
+            svg += `<line class="dim-line" x1="${cx-45}" y1="${cy-r1-8}" x2="${cx-45}" y2="${cy-r1-18}"/>`;
+            svg += `<line class="dim-line" x1="${cx-45-r1}" y1="${cy-r1-18}" x2="${cx-45+r1}" y2="${cy-r1-18}"/>`;
+            svg += `<text class="dim-text" x="${cx-45}" y="${cy-r1-22}" text-anchor="middle">D4=${D4}</text>`;
+            svg += `<line class="dim-line" x1="${sx+r1+5}" y1="${cy+hsc}" x2="${sx+r1+5}" y2="${cy+hsc+hsc*th}"/>`;
+            svg += `<text class="dim-text" x="${sx+r1+13}" y="${cy+hsc+hsc*th/2+3}">δ=${th}</text>`;
+        }
+        // === Generic fallback ===
+            const dn = getDim('公称通径') || getDim('规格') || 20;
+            const cx = W/2, cy = DRAW_H/2;
+            const r = Math.min(dn * 2 / 2.5, 80);
+            svg += `<rect x="0" y="${DRAW_H+6}" width="${W}" height="${TB_H}" fill="var(--bg-secondary)" stroke="var(--draw-line)" stroke-width="0.8"/>
+  <text x="8" y="${DRAW_H+18}" class="title-text" font-size="9">${stdNo || name}</text>
+  <text x="${W-5}" y="${DRAW_H+18}" class="label-text" text-anchor="end" font-size="8">${name}</text>`;
+            svg += `<circle class="fill-light" cx="${cx}" cy="${cy}" r="${r}" fill="url(#hatch)"/>`;
+            svg += `<circle class="outline" cx="${cx}" cy="${cy}" r="${r}"/>`;
+            svg += `<circle cx="${cx}" cy="${cy}" r="${r*0.3}" stroke-width="1" stroke="var(--draw-line)" fill="none" stroke-dasharray="3,2"/>`;
+            svg += `<line class="center-line" x1="${cx-r-10}" y1="${cy}" x2="${cx+r+10}" y2="${cy}"/>`;
+            svg += `<line class="center-line" x1="${cx}" y1="${cy-r-10}" x2="${cx}" y2="${cy+r+10}"/>`;
+            svg += `<line class="dim-line" x1="${cx}" y1="${cy-r-8}" x2="${cx}" y2="${cy-r-18}"/>`;
+            svg += `<line class="dim-line" x1="${cx-r}" y1="${cy-r-18}" x2="${cx+r}" y2="${cy-r-18}"/>`;
+            svg += `<text class="dim-text" x="${cx}" y="${cy-r-22}" text-anchor="middle">D≈${(r*2).toFixed(0)}</text>`;
+        }
+
+        svg += '</svg>';
+        return svg;
+    }
+
+    // ==================== Render Functions ====================
+    function renderCategories() {
+        const catCounts = {};
+        for (const [catId, models] of Object.entries(standardsData)) {
+            catCounts[catId] = (models || []).length;
+        }
+        const container = document.getElementById('categoryList');
+        container.innerHTML = categories.map(cat => `
+            <div class="category-item ${currentCategory === cat.id ? 'active' : ''}"
+                 onclick="selectCategory('${cat.id}')">
+                <span class="icon">${cat.icon}</span>
+                <div class="info">
+                    <div class="name">${cat.name}</div>
+                    <div class="desc">${cat.desc}</div>
+                </div>
+                ${catCounts[cat.id] ? `<span class="category-count">${catCounts[cat.id]}</span>` : ''}
+            </div>
+        `).join('');
+    }
+
+    // ==================== Pagination State ====================
+    const PAGE_SIZE = 50;
+    let pageState = {}; // categoryId -> { page: 1, total: 0, rendered: 0 }
+
+    // ==================== Model List (Paginated) ====================
+    function renderModelList(categoryId, append = false) {
+        const titleEl = document.getElementById('modelListTitle');
+        const listEl = document.getElementById('modelList');
+        const searchResultsEl = document.getElementById('searchResults');
+        searchResultsEl.classList.remove('show');
+
+        const category = categories.find(c => c.id === categoryId);
+        titleEl.textContent = category ? `${category.icon} ${category.name}` : '型号列表';
+
+        if (!categoryId || !standardsData[categoryId]) {
+            listEl.innerHTML = '<div style="padding:20px;color:var(--text-muted);text-align:center;font-size:13px;">该分类暂无数据</div>';
+            return;
+        }
+
+        const modelsRaw = standardsData[categoryId];
+        // Apply advanced filter
+        const models = currentFilter
+            ? modelsRaw.filter(item => matchesFilter(item, categoryId))
+            : modelsRaw;
+        if (!append) {
+            groupedData[categoryId] = groupByStandard(models);
+        }
+        const grouped = groupedData[categoryId];
+        const sortedKeys = Object.keys(grouped).sort();
+
+        // Init or advance page state
+        if (!pageState[categoryId]) {
+            pageState[categoryId] = { page: 1, total: sortedKeys.length, rendered: Math.min(PAGE_SIZE, sortedKeys.length) };
+        } else if (!append) {
+            pageState[categoryId] = { page: 1, total: sortedKeys.length, rendered: Math.min(PAGE_SIZE, sortedKeys.length) };
+        } else {
+            pageState[categoryId].page++;
+            pageState[categoryId].rendered = Math.min(pageState[categoryId].page * PAGE_SIZE, sortedKeys.length);
+        }
+
+        const ps = pageState[categoryId];
+        const pageKeys = sortedKeys.slice(0, ps.rendered);
+
+        if (!append) {
+            listEl.innerHTML = '';
+        }
+
+        listEl.innerHTML += pageKeys.map(stdNo => {
+            const items = grouped[stdNo];
+            const firstItem = items[0];
+            const specCount = items.length;
+            const label = firstItem.name.replace(/\s*M?[\d.]+[×x]\s*\d+(\.\d+)?/g, '').trim() || firstItem.name;
+            const isInCompare = compareList.some(s => s.stdNo === stdNo);
+            const isFav = favorites.some(s => s.stdNo === stdNo);
+            return `
+                <div class="model-item ${currentStandardNo === stdNo ? 'active' : ''}"
+                     onclick="selectStandard('${stdNo.replace(/'/g, "\\'")}', '${categoryId}')">
+                    <div class="model-item-left">
+                        <div class="standard">${stdNo}</div>
+                        <div class="name">${label} 等${specCount}种</div>
+                    </div>
+                    <div class="model-item-actions">
+                        <button class="compare-add-btn ${isInCompare ? 'added' : ''}"
+                                onclick="event.stopPropagation(); toggleCompareAdd('${stdNo.replace(/'/g, "\\'")}', '${categoryId}')"
+                                title="${isInCompare ? '已加入对比' : '加入对比'}">
+                            ${isInCompare ? '✓' : '⚡'}
+                        </button>
+                        <button class="fav-btn ${isFav ? 'added' : ''}"
+                                onclick="event.stopPropagation(); toggleFavorite('${stdNo.replace(/'/g, "\\'")}', '${categoryId}')"
+                                title="${isFav ? '取消收藏' : '收藏'}">
+                            ${isFav ? '★' : '☆'}
+                        </button>
+                    </div>
+                </div>`;
+        }).join('');
+
+        // Load more button
+        if (ps.rendered < ps.total) {
+            listEl.innerHTML += `
+                <div id="loadMoreBtn" onclick="loadMoreModels('${categoryId}')"
+                     style="padding:12px;text-align:center;cursor:pointer;color:var(--accent);font-size:13px;border-top:1px solid var(--border);margin-top:4px;">
+                    ⬇ 加载更多 (${ps.rendered}/${ps.total})
+                </div>`;
+        }
+
+        // Scroll to top of list on first load
+        if (!append) {
+            listEl.scrollTop = 0;
+        }
+    }
+
+    function loadMoreModels(categoryId) {
+        renderModelList(categoryId, true);
+    }
+
+    function renderDetail(stdNo, categoryId) {
+        const placeholderEl = document.getElementById('detailPlaceholder');
+        const contentEl = document.getElementById('detailContent');
+
+        if (!stdNo || !categoryId) {
+            placeholderEl.style.display = 'flex';
+            contentEl.classList.remove('show');
+            return;
+        }
+
+        const grouped = groupedData[categoryId];
+        const items = grouped ? grouped[stdNo] : [];
+        if (!items || items.length === 0) {
+            placeholderEl.style.display = 'flex';
+            contentEl.classList.remove('show');
+            return;
+        }
+
+        placeholderEl.style.display = 'none';
+        contentEl.classList.add('show');
+
+        const firstItem = items[0];
+        const sampleItem = items[Math.floor(items.length / 2)] || firstItem;
+
+        // Header
+        document.getElementById('detailStandardNo').textContent = stdNo;
+        document.getElementById('detailTitle').textContent = `${firstItem.name} (共${items.length}种规格)`;
+        document.getElementById('detailCategory').textContent = firstItem.category;
+
+        // ===== Drawing: PDF image (method 2) → SVG (method 1 fallback) =====
+        const drawingArea = document.getElementById('drawingArea');
+        
+        // Check if we have a PDF image for this standard
+        const normKey = (stdNo || '').toUpperCase()
+            .replace(/ /g,'').replace(/\//g,'').replace(/-/g,'').replace(/\./g,'')
+            .replace(/\d{4}$/, ''); // strip year suffix
+        const pdfImg = (typeof pdfImageMap !== 'undefined') ? pdfImageMap[normKey] : null;
+        
+        if (pdfImg && pdfImg.data) {
+            // PDF图像 (method 2: extracted from scanned/text PDF)
+            const imgSrc = `data:image/${pdfImg.ext};base64,${pdfImg.data}`;
+            drawingArea.innerHTML = `
+                <div class="pdf-image-container">
+                    <div class="pdf-image-header">
+                        <span class="pdf-badge">📄 PDF原文</span>
+                        <span class="pdf-source">来源: ${pdfImg.source || ''}</span>
+                    </div>
+                    <img src="${imgSrc}" alt="${stdNo}" class="pdf-image" 
+                         style="max-width:100%;max-height:300px;border:1px solid var(--border-color);border-radius:6px;"/>
+                    <p class="pdf-note">🔗 点击上方CAD平台下载STEP/IGES真3D模型</p>
+                </div>`;
+        } else {
+            // 程序化SVG图纸 (method 1: generated from dimension data)
+            const svgContent = generateDrawingSVG(sampleItem);
+            drawingArea.innerHTML = svgContent + 
+                `<p class="svg-note">📐 简易工程示意图 · 尺寸来自数据库 · 点击CAD平台下载精确图纸</p>`;
+        }
+
+        // Dimensions Table
+        const dimTable = document.getElementById('dimTable');
+        const allParamNames = new Set();
+        for (const item of items) {
+            for (const dim of (item.dimensions || [])) {
+                allParamNames.add(dim.param);
+            }
+        }
+        const paramNames = Array.from(allParamNames);
+        const maxSpecs = Math.min(items.length, 8);
+        const displayItems = items.slice(0, maxSpecs);
+
+        let tableHtml = '<thead><tr><th>参数</th>';
+        for (let i = 0; i < displayItems.length; i++) {
+            const name = displayItems[i].name;
+            const match = name.match(/M?[\d.]+[×x]\s*\d+(\.\d+)?/);
+            const specLabel = match ? match[0] : `规格${i+1}`;
+            tableHtml += `<th style="color:var(--table-header);font-size:11px;white-space:nowrap;">${specLabel}</th>`;
+        }
+        if (items.length > maxSpecs) tableHtml += `<th style="color:var(--text-muted);font-size:11px;">...共${items.length}种</th>`;
+        tableHtml += '</tr></thead><tbody>';
+
+        for (const param of paramNames) {
+            tableHtml += `<tr><th style="color:var(--table-header);white-space:nowrap;">${param}</th>`;
+            for (let i = 0; i < displayItems.length; i++) {
+                const dim = displayItems[i].dimensions?.find(d => d.param === param);
+                tableHtml += `<td style="white-space:nowrap;">${dim ? dim.value : '-'}</td>`;
+            }
+            if (items.length > maxSpecs) tableHtml += `<td style="color:var(--text-muted);">...</td>`;
+            tableHtml += '</tr>';
+        }
+        tableHtml += '</tbody>';
+        dimTable.innerHTML = tableHtml;
+
+        // CAD Links
+        const cadLinksEl = document.getElementById('cadLinks');
+        const cadLinks = sampleItem.cadLinks || [];
+        if (cadLinks.length > 0) {
+            const iconMap = { '3d': '📦', 'cad': '📐' };
+            cadLinksEl.innerHTML = cadLinks.map(link => `
+                <a href="${link.url}" target="_blank" class="cad-link">
+                    <span class="icon">${iconMap[link.icon] || '📦'}</span>
+                    <div>
+                        <div class="platform">${link.platform}</div>
+                        <div class="format">${link.format}</div>
+                    </div>
+                </a>`).join('');
+        } else {
+            cadLinksEl.innerHTML = '<p style="color:var(--text-muted);font-size:13px;text-align:center;">暂无CAD链接</p>';
+        }
+
+        // Description
+        document.getElementById('detailDescription').innerHTML = `
+            <p>📌 <strong>${stdNo}</strong> ${firstItem.description}</p>
+            <p style="margin-top:8px;color:var(--text-muted);">共收录 <strong style="color:var(--accent);">${items.length}</strong> 种规格。</p>`;
+
+        // Tags
+        const tagsEl = document.getElementById('detailTags');
+        const allTags = new Set();
+        for (const item of items) {
+            for (const tag of (item.tags || [])) allTags.add(tag);
+        }
+        tagsEl.innerHTML = Array.from(allTags).slice(0, 20).map(tag => `<span class="tag">${tag}</span>`).join('');
+
+        addToHistory(stdNo, categoryId);
+        addToSearchHistory(stdNo);
+        // Update detail fav button
+        const favBtn = document.getElementById('detailFavBtn');
+        if (favBtn) {
+            const isFav = favorites.some(s => s.stdNo === stdNo);
+            favBtn.textContent = isFav ? '★' : '☆';
+            favBtn.classList.toggle('favorited', isFav);
+        }
+    }
+
+    // ==================== Grouping ====================
+    function groupByStandard(items) {
+        const grouped = {};
+        for (const item of items) {
+            const key = item.standardNo;
+            if (!grouped[key]) grouped[key] = [];
+            grouped[key].push(item);
+        }
+        return grouped;
+    }
+
+    // ==================== Search History ====================
+    let searchHistory = JSON.parse(localStorage.getItem('stdSearchHistory') || '[]');
+
+    function addToSearchHistory(standardNo) {
+        if (!standardNo) return;
+        searchHistory = searchHistory.filter(s => s !== standardNo);
+        searchHistory.unshift(standardNo);
+        searchHistory = searchHistory.slice(0, 10);
+        localStorage.setItem('stdSearchHistory', JSON.stringify(searchHistory));
+    }
+
+    function showSearchHistory() {
+        if (searchHistory.length === 0) return;
+        const searchInput = document.getElementById('searchInput');
+        let historyEl = document.getElementById('searchHistoryDropdown');
+        if (!historyEl) {
+            historyEl = document.createElement('div');
+            historyEl.id = 'searchHistoryDropdown';
+            historyEl.className = 'search-history-dropdown';
+            searchInput.parentNode.style.position = 'relative';
+            searchInput.parentNode.appendChild(historyEl);
+        }
+        historyEl.innerHTML = `
+            <div class="history-header">最近搜索</div>
+            ${searchHistory.map(s => `<div class="history-item" onclick="searchWithHistory('${s}')">${s}</div>`).join('')}
+            <div class="history-clear" onclick="clearSearchHistory()">清除历史</div>`;
+        historyEl.style.display = 'block';
+    }
+
+    function hideSearchHistory() {
+        const el = document.getElementById('searchHistoryDropdown');
+        if (el) el.style.display = 'none';
+    }
+
+    function searchWithHistory(term) {
+        document.getElementById('searchInput').value = term;
+        hideSearchHistory();
+        searchStandard();
+    }
+
+    function clearSearchHistory() {
+        searchHistory = [];
+        localStorage.removeItem('stdSearchHistory');
+        hideSearchHistory();
+    }
+
+    // ==================== Interaction ====================
+    function selectCategory(categoryId) {
+        currentCategory = categoryId;
+        currentStandardNo = null;
+        renderCategories();
+        renderModelList(categoryId);
+        renderDetail(null, null);
+    }
+
+    function selectStandard(stdNo, categoryId) {
+        currentStandardNo = stdNo;
+        currentCategory = categoryId;
+        renderCategories();
+        renderModelList(categoryId);
+        renderDetail(stdNo, categoryId);
+    }
+
+    // ==================== Fuzzy Search Engine ====================
+    // Supports: fuzzy match, pinyin, abbreviation, partial match
+
+    // Compact pinyin lookup for common mechanical terms (bilingual map)
+    const PY_MAP = {
+        '螺栓': 'luoshan', '螺钉': 'luoding', '螺母': 'luomu', '垫圈': 'dianquan',
+        '平垫圈': 'pingdianquan', '弹簧垫圈': 'tanhuangdianquan', '弹垫': 'tandong',
+        '螺柱': 'luozhu', '双头螺柱': 'shuangtouluozhu', '螺杆': 'luogan',
+        '法兰': 'falan', '法兰盖': 'falangai', '弯头': 'wantou', '三通': 'santong',
+        '管法兰': 'guanfalan', '板式平焊': 'banshipinghan',
+        '垫片': 'dianpian', '密封垫片': 'mifengdianpian', '非金属垫片': 'feijinshudianpian',
+        '缠绕垫片': 'chanraodianpian', '石墨垫片': 'shimodianpian',
+        '轴承': 'zhoucheng', '深沟球轴承': 'shengouqiuzhoucheng', '角接触球轴承': 'jiaojiechqiuzhoucheng',
+        '圆柱滚子轴承': 'yuanzhugunzizhoucheng', '圆锥滚子轴承': 'yuanzhugunzizhoucheng',
+        '弹簧': 'tanhuang', '压缩弹簧': 'yasatanhuang', '拉伸弹簧': 'lachenhuang',
+        '螺旋弹簧': 'luoxuanhuang',
+        '铆钉': 'maoding', '半圆头铆钉': 'banyuantoumaoding', '沉头铆钉': 'chentoumaoding',
+        '平头铆钉': 'pingtoumaoding',
+        '螺塞': 'luosai', '螺钉': 'luoding', '紧定螺钉': 'jindingluoding',
+        '内六角': 'neiliujiao', '圆柱头': 'yuanzhutou', '六角头': 'liujiaotou',
+        '六角螺栓': 'liujiaoluoshan', '六角螺母': 'liujiaoluomu',
+        '材料': 'cailiao', '碳钢': 'tangang', '不锈钢': 'buxiugang', '合金钢': 'heijingang',
+        '表面处理': 'biaomianchuli', '镀锌': 'duxin', '发黑': 'fahei', '磷化': 'linhua',
+        '强度等级': 'qiangdudengji', '8.8级': '8.8ji', '10.9级': '10.9ji', '12.9级': '12.9ji',
+        '机械性能': 'jixiexingneng', '性能等级': 'xingnengdengji',
+        '规格': 'guige', '型号': 'xinghao', '标准': 'biaozhun', '国标': 'guobiao',
+        '化工部': 'huagongbu', '化学工业': 'huaxuegongye',
+        '产品': 'chanpin', '技术要求': 'jishuyaoqiu', '尺寸': 'chicun',
+        '等级': 'dengji', 'A级': 'Aji', 'B级': 'Bji', 'C级': 'Cji',
+        '优质': 'youzhi', '普通': 'putong',
+    };
+
+    // Build reverse pinyin index
+    const PY_INDEX = {};
+    for (const [zh, py] of Object.entries(PY_MAP)) {
+        PY_INDEX[zh] = py;
+        // Also index by first char for partial
+        for (let i = 1; i <= zh.length; i++) {
+            const prefix = zh.slice(0, i);
+            if (!PY_INDEX[prefix]) PY_INDEX[prefix] = py;
+        }
+    }
+
+    // Get pinyin of a Chinese string (simple lookup)
+    function toPinyin(str) {
+        if (!str) return '';
+        let result = str;
+        for (const [zh, py] of Object.entries(PY_MAP)) {
+            result = result.replace(new RegExp(zh, 'g'), py);
+        }
+        return result;
+    }
+
+    // Fuzzy match scoring: higher = better match
+    // query: string to match, target: string to match against
+    function fuzzyScore(query, target) {
+        if (!query || !target) return 0;
+        const q = query.toUpperCase(), t = target.toUpperCase();
+        // Exact contains (highest)
+        if (t.includes(q)) return 100 + (t === q ? 50 : 0);
+        // Pinyin match
+        const tp = toPinyin(t), qp = toPinyin(q);
+        if (tp.includes(qp)) return 90;
+        if (tp.includes(qp.slice(0, -1))) return 85;
+        // Abbreviation: first letters (GB/T ->GBT)
+        const abbrev = t.replace(/[^A-Z0-9]/g, '').toUpperCase();
+        if (abbrev.startsWith(q.replace(/[^A-Z0-9]/g, '').toUpperCase())) return 80;
+        // Char-by-char fuzzy
+        let qi = 0, score = 0, consecutive = 0, lastIdx = -1;
+        for (let i = 0; i < t.length && qi < q.length; i++) {
+            if (t[i] === q[qi]) {
+                qi++;
+                consecutive++;
+                if (lastIdx === i - 1) score += 2 * consecutive; // consecutive bonus
+                else score += 5;
+                lastIdx = i;
+            }
+        }
+        if (qi < q.length) return 0; // not all chars found
+        return score;
+    }
+
+    function fuzzySearch(query, model) {
+        const fields = [
+            model.standardNo || '',
+            model.name || '',
+            model.id || '',
+            ...(model.tags || []),
+            ...(model.dimensions?.map(d => d.param + ' ' + d.value) || []),
+            toPinyin(model.name || ''),       // pinyin of name
+            toPinyin(model.standardNo || ''), // pinyin of standardNo
+        ];
+        const target = fields.join(' ').toUpperCase();
+        const q = query.toUpperCase();
+        // Fast exact checks first
+        if (target.includes(q)) return { score: 100 + (target.startsWith(q) ? 20 : 0), matched: q };
+        // Abbreviation
+        const abbrev = target.replace(/[^A-Z0-9]/g, '');
+        if (abbrev.startsWith(q.replace(/[^A-Z0-9]/g, ''))) return { score: 90, matched: q };
+        // Pinyin
+        const pyTarget = toPinyin(target), pyQuery = toPinyin(q);
+        if (pyTarget.includes(pyQuery)) return { score: 85, matched: q };
+        // Fuzzy
+        const fs = fuzzyScore(q, target);
+        return { score: fs, matched: q };
+    }
+
+    function searchStandard() {
+        const rawQuery = document.getElementById('searchInput').value.trim();
+        if (!rawQuery) return;
+        const query = rawQuery.toUpperCase();
+
+        const results = [];
+        const stdNoMap = {};
+
+        for (const [catId, models] of Object.entries(standardsData)) {
+            for (const model of models) {
+                const { score } = fuzzySearch(rawQuery, model);
+                if (score > 0) {
+                    const key = `${catId}:${model.standardNo}`;
+                    if (!stdNoMap[key]) {
+                        stdNoMap[key] = { ...model, categoryId: catId, score, count: 1 };
+                    } else {
+                        stdNoMap[key].count++;
+                        stdNoMap[key].score = Math.max(stdNoMap[key].score, score);
+                    }
+                }
+            }
+        }
+
+        const sorted = Object.values(stdNoMap)
+            .filter(r => r.score > 0)
+            .sort((a, b) => b.score - a.score);
+
+        const searchResultsEl = document.getElementById('searchResults');
+        const searchResultsHeader = document.getElementById('searchResultsHeader');
+        const searchResultsList = document.getElementById('searchResultsList');
+
+        if (sorted.length === 0) {
+            searchResultsHeader.textContent = `未找到 "${rawQuery}"`;
+            searchResultsList.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px;">试试其他关键词，或输入拼音如 "luoshan"</div>';
+        } else {
+            searchResultsHeader.textContent = `找到 ${sorted.length} 个标准 (${sorted.reduce((s,r)=>s+r.count,0)} 个规格)`;
+            searchResultsList.innerHTML = sorted.slice(0, 80).map((r, i) => {
+                const isInCompare = compareList.some(s => s.stdNo === r.standardNo);
+                const isFav = favorites.some(s => s.stdNo === r.standardNo);
+                return `
+                <div class="model-item" onclick="selectModelFromSearch('${r.categoryId}', '${r.standardNo.replace(/'/g,"\\'")}')"
+                     style="${i > 0 && r.score !== sorted[i-1].score ? 'border-top:1px solid var(--border);' : ''}">
+                    <div class="model-item-left">
+                        <div class="standard">${r.standardNo}</div>
+                        <div class="name">${r.name} <span style="color:var(--accent);font-size:11px;">等${r.count}种</span></div>
+                    </div>
+                    <div class="model-item-actions">
+                        <button class="compare-add-btn ${isInCompare ? 'added' : ''}"
+                                onclick="event.stopPropagation(); toggleCompareAdd('${r.standardNo.replace(/'/g,"\\'")}', '${r.categoryId}')"
+                                title="${isInCompare ? '已加入对比' : '加入对比'}">
+                            ${isInCompare ? '✓' : '⚡'}
+                        </button>
+                        <button class="fav-btn ${isFav ? 'added' : ''}"
+                                onclick="event.stopPropagation(); toggleFavorite('${r.standardNo.replace(/'/g,"\\'")}', '${r.categoryId}')"
+                                title="${isFav ? '取消收藏' : '收藏'}">
+                            ${isFav ? '★' : '☆'}
+                        </button>
+                    </div>
+                </div>`;
+            }).join('');
+            if (sorted.length > 80) {
+                searchResultsList.innerHTML += `<div style="padding:10px;text-align:center;color:var(--text-muted);font-size:12px;">显示前80条，共${sorted.length}条</div>`;
+            }
+        }
+
+        searchResultsEl.classList.add('show');
+        document.getElementById('modelListTitle').textContent = '🔍 搜索结果';
+    }
+
+    function selectModelFromSearch(categoryId, stdNo) {
+        currentCategory = categoryId;
+        currentStandardNo = stdNo;
+        renderCategories();
+        renderModelList(categoryId);
+        renderDetail(stdNo, categoryId);
+        document.getElementById('searchInput').value = stdNo;
+        document.getElementById('searchResults').classList.remove('show');
+        document.getElementById('modelListTitle').textContent = `🔍 ${stdNo}`;
+    }
+
+    // ==================== Mobile Tab Navigation ====================
+    let mobileCurrentTab = 'leftPanel';
+
+    function switchMobileTab(targetId) {
+        if (!targetId) return;
+        // Remove active class from all panels
+        ['leftPanel','middlePanel','detailPanel'].forEach(id => {
+            document.getElementById(id)?.classList.remove('active-mobile');
+        });
+        // Remove active from nav items
+        ['navCat','navList','navDetail'].forEach(id => {
+            document.getElementById(id)?.classList.remove('active');
+        });
+        // Activate target
+        document.getElementById(targetId)?.classList.add('active-mobile');
+        if (targetId === 'leftPanel') document.getElementById('navCat')?.classList.add('active');
+        if (targetId === 'middlePanel') document.getElementById('navList')?.classList.add('active');
+        if (targetId === 'detailPanel') document.getElementById('navDetail')?.classList.add('active');
+        mobileCurrentTab = targetId;
+    }
+
+    // Auto-switch tabs when selecting items (mobile)
+    const origSelectCategory = selectCategory;
+    selectCategory = function(catId) {
+        origSelectCategory(catId);
+        if (window.innerWidth <= 768) {
+            setTimeout(() => switchMobileTab('middlePanel'), 50);
+        }
+    };
+    const origSelectStandard = selectStandard;
+    selectStandard = function(stdNo, catId) {
+        origSelectStandard(stdNo, catId);
+        if (window.innerWidth <= 768) {
+            setTimeout(() => switchMobileTab('detailPanel'), 50);
+        }
+    };
+
+    // ==================== Advanced Filter ====================
+    let filterState = {
+        industry: [],    // HG/HB/JB/GB
+        type: [],        // 螺栓/螺母/垫圈 etc.
+        thread: [],      // M6/M8/M10 etc.
+        standard: []      // specific standard numbers
+    };
+    let filterPanelOpen = false;
+    let filterInitialized = false;
+
+    // Build filter options dynamically from data
+    function buildFilterOptions() {
+        const options = { industry: new Set(), type: new Set(), thread: new Set(), standard: new Set() };
+        const threadPatt = /^M?(\d+)/i;
+        for (const [catId, models] of Object.entries(standardsData)) {
+            for (const item of (models || [])) {
+                const name = item.name || '';
+                const stdNo = item.standardNo || '';
+                // Industry
+                if (catId === 'hg') options.industry.add('HG化工');
+                else if (catId === 'hb') options.industry.add('HB航空');
+                else if (catId === 'jb') options.industry.add('JB机械');
+                else options.industry.add('GB国标');
+                // Type: derive from name
+                if (/螺[母钉塞]|luomu|screw/i.test(name)) options.type.add('螺钉/螺栓');
+                else if (/螺母|luomu/i.test(name)) options.type.add('螺母');
+                else if (/垫[片圈]|wash/i.test(name)) options.type.add('垫圈/垫片');
+                else if (/轴[承箱]|bear/i.test(name)) options.type.add('轴承');
+                else if (/法兰|flang/i.test(name)) options.type.add('法兰');
+                else if (/密[封垫]|seal|gasket/i.test(name)) options.type.add('密封件');
+                else if (/弹[簧]|spring/i.test(name)) options.type.add('弹簧');
+                else if (/键|key/i.test(name)) options.type.add('键');
+                else if (/齿[轮]|gear/i.test(name)) options.type.add('齿轮');
+                else if (/液[压]|hydraulic/i.test(name)) options.type.add('液压件');
+                else if (/铆[钉]|rivet/i.test(name)) options.type.add('铆钉');
+                else if (/联轴|coupling/i.test(name)) options.type.add('联轴器');
+                else options.type.add('其他');
+                // Thread size
+                const tmatch = stdNo.match(threadPatt) || name.match(threadPatt);
+                if (tmatch) options.thread.add('M' + tmatch[1]);
+                // Standard no
+                if (stdNo) {
+                    const base = stdNo.replace(/\/.*$/, '').replace(/\s/g, '');
+                    if (base) options.standard.add(base);
+                }
+            }
+        }
+        return {
+            industry: Array.from(options.industry).sort(),
+            type: Array.from(options.type).sort(),
+            thread: Array.from(options.thread).sort((a,b) => parseInt(a.slice(1)) - parseInt(b.slice(1))).filter(t => /^\d+$/.test(t.slice(1))).slice(0, 20),
+            standard: Array.from(options.standard).sort().slice(0, 30)
+        };
+    }
+
+    let filterOptions = null;
+
+    function toggleFilterPanel() {
+        filterPanelOpen = !filterPanelOpen;
+        const panel = document.getElementById('filterPanel');
+        const icon = document.getElementById('filterToggleIcon');
+        panel.classList.toggle('open', filterPanelOpen);
+        icon.classList.toggle('open', filterPanelOpen);
+        icon.textContent = filterPanelOpen ? '▲' : '▼';
+        if (filterPanelOpen && !filterInitialized) {
+            filterOptions = buildFilterOptions();
+            renderFilterPanel();
+            filterInitialized = true;
+        }
+    }
+
+    function renderFilterPanel() {
+        if (!filterOptions) return;
+        const panel = document.getElementById('filterPanel');
+        const groups = [
+            { key: 'industry', label: '🏭 行业分类', values: filterOptions.industry },
+            { key: 'type', label: '🔩 零件类型', values: filterOptions.type },
+            { key: 'thread', label: '📏 螺纹规格', values: filterOptions.thread },
+        ];
+
+        let html = groups.map(g => `
+            <div class="filter-group" id="filterGroup_${g.key}">
+                <div class="filter-group-header" onclick="toggleFilterGroup('${g.key}')">
+                    <span>${g.label}</span>
+                    <span class="filter-group-arrow" id="filterArrow_${g.key}">▼</span>
+                </div>
+                <div class="filter-group-body" id="filterBody_${g.key}">
+                    ${g.values.map(v => `
+                        <label class="filter-chip ${filterState[g.key].includes(v) ? 'active' : ''}"
+                               onclick="toggleFilterChip('${g.key}', '${v.replace(/'/g, "\\'")}')">
+                            ${v}
+                        </label>`).join('')}
+                </div>
+            </div>`).join('');
+
+        // Actions
+        html += `
+            <div class="filter-actions">
+                <button class="filter-action-btn reset" onclick="resetFilters()">🔄 重置</button>
+                <button class="filter-action-btn" onclick="applyFilters()">✓ 应用筛选</button>
+            </div>
+            <div class="filter-match-count" id="filterMatchCount">
+                点击"应用筛选"查看符合条件的数据
+            </div>`;
+
+        panel.innerHTML = html;
+        // Auto-open first group
+        toggleFilterGroup('industry');
+    }
+
+    function toggleFilterGroup(key) {
+        const body = document.getElementById('filterBody_' + key);
+        const arrow = document.getElementById('filterArrow_' + key);
+        body.classList.toggle('open');
+        arrow.classList.toggle('open');
+    }
+
+    function toggleFilterChip(key, value) {
+        const arr = filterState[key];
+        const idx = arr.indexOf(value);
+        if (idx >= 0) arr.splice(idx, 1);
+        else arr.push(value);
+        updateFilterBadge();
+        // Update chip UI without full re-render
+        const chips = document.querySelectorAll(`#filterBody_${key} .filter-chip`);
+        chips.forEach(chip => {
+            const txt = chip.textContent.trim();
+            if (arr.includes(txt)) chip.classList.add('active');
+            else chip.classList.remove('active');
+        });
+    }
+
+    function updateFilterBadge() {
+        const total = filterState.industry.length + filterState.type.length + filterState.thread.length + filterState.standard.length;
+        const badge = document.getElementById('filterBadge');
+        badge.textContent = total;
+        badge.classList.toggle('show', total > 0);
+    }
+
+    function resetFilters() {
+        filterState = { industry: [], type: [], thread: [], standard: [] };
+        updateFilterBadge();
+        if (filterOptions) {
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        }
+        document.getElementById('filterMatchCount').innerHTML = '已重置，点击"应用筛选"查看全部数据';
+    }
+
+    function applyFilters() {
+        const hasIndustry = filterState.industry.length > 0;
+        const hasType = filterState.type.length > 0;
+        const hasThread = filterState.thread.length > 0;
+        const hasStd = filterState.standard.length > 0;
+        const hasAny = hasIndustry || hasType || hasThread || hasStd;
+
+        if (!hasAny) {
+            // Show all
+            currentFilter = null;
+        } else {
+            currentFilter = {};
+            if (hasIndustry) currentFilter.industry = [...filterState.industry];
+            if (hasType) currentFilter.type = [...filterState.type];
+            if (hasThread) currentFilter.thread = [...filterState.thread];
+            if (hasStd) currentFilter.standard = [...filterState.standard];
+        }
+
+        // Count matches
+        let matchCount = 0;
+        const catIds = Object.keys(standardsData);
+        for (const catId of catIds) {
+            const models = standardsData[catId] || [];
+            for (const item of models) {
+                if (!hasAny || matchesFilter(item, catId)) matchCount++;
+            }
+        }
+
+        const countEl = document.getElementById('filterMatchCount');
+        countEl.innerHTML = hasAny
+            ? `符合条件: <strong>${matchCount.toLocaleString()}</strong> 条数据`
+            : `全部数据: <strong>${matchCount.toLocaleString()}</strong> 条`;
+
+        // Refresh category list to reflect filtered count
+        if (currentCategory) {
+            renderCategories();
+            renderModelList(currentCategory);
+        }
+    }
+
+    function matchesFilter(item, catId) {
+        if (!currentFilter) return true;
+        const name = item.name || '';
+        const stdNo = item.standardNo || '';
+
+        if (currentFilter.industry && currentFilter.industry.length > 0) {
+            let itemIndustry = 'GB国标';
+            if (catId === 'hg') itemIndustry = 'HG化工';
+            else if (catId === 'hb') itemIndustry = 'HB航空';
+            else if (catId === 'jb') itemIndustry = 'JB机械';
+            if (!currentFilter.industry.includes(itemIndustry)) return false;
+        }
+
+        if (currentFilter.type && currentFilter.type.length > 0) {
+            let itemType = '其他';
+            if (/螺[母钉塞]|screw/i.test(name)) itemType = '螺钉/螺栓';
+            else if (/螺母/i.test(name)) itemType = '螺母';
+            else if (/垫[片圈]/i.test(name)) itemType = '垫圈/垫片';
+            else if (/轴[承箱]|bear/i.test(name)) itemType = '轴承';
+            else if (/法兰|flang/i.test(name)) itemType = '法兰';
+            else if (/密[封垫]|seal|gasket/i.test(name)) itemType = '密封件';
+            else if (/弹[簧]/i.test(name)) itemType = '弹簧';
+            else if (/键|key/i.test(name)) itemType = '键';
+            else if (/齿[轮]|gear/i.test(name)) itemType = '齿轮';
+            else if (/液[压]/i.test(name)) itemType = '液压件';
+            else if (/铆[钉]/i.test(name)) itemType = '铆钉';
+            else if (/联轴/i.test(name)) itemType = '联轴器';
+            if (!currentFilter.type.includes(itemType)) return false;
+        }
+
+        if (currentFilter.thread && currentFilter.thread.length > 0) {
+            const tmatch = stdNo.match(/M?(\d+)/i) || name.match(/M?(\d+)/i);
+            if (!tmatch) return false;
+            const t = 'M' + tmatch[1];
+            if (!currentFilter.thread.includes(t)) return false;
+        }
+
+        if (currentFilter.standard && currentFilter.standard.length > 0) {
+            const base = stdNo.replace(/\/.*$/, '').replace(/\s/g, '');
+            if (!base || !currentFilter.standard.includes(base)) return false;
+        }
+
+        return true;
+    }
+
+    let currentFilter = null; // null = no filter
+
+    // ==================== Favorites & History ====================
+    let favorites = JSON.parse(localStorage.getItem('stdFavorites') || '[]');
+    let historyList = JSON.parse(localStorage.getItem('stdHistory') || '[]');
+    let currentFavHistTab = 'fav';
+
+    function updateFavBadge() {
+        const badge = document.getElementById('favBadge');
+        badge.textContent = favorites.length;
+        badge.classList.toggle('show', favorites.length > 0);
+    }
+
+    function toggleFavorite(stdNo, categoryId) {
+        const idx = favorites.findIndex(s => s.stdNo === stdNo);
+        if (idx >= 0) {
+            favorites.splice(idx, 1);
+        } else {
+            // Get name for display
+            const grouped = groupedData[categoryId];
+            const items = grouped ? grouped[stdNo] : [];
+            const name = items.length > 0 ? items[0].name : stdNo;
+            const category = items.length > 0 ? items[0].category : '';
+            favorites.push({ stdNo, categoryId, name, category, addedAt: Date.now() });
+        }
+        localStorage.setItem('stdFavorites', JSON.stringify(favorites));
+        updateFavBadge();
+        if (currentCategory) renderModelList(currentCategory);
+    }
+
+    function toggleFavoriteDetail() {
+        if (!currentStandardNo || !currentCategory) return;
+        toggleFavorite(currentStandardNo, currentCategory);
+        // Update detail button
+        const favBtn = document.getElementById('detailFavBtn');
+        if (favBtn) {
+            const isFav = favorites.some(s => s.stdNo === currentStandardNo);
+            favBtn.textContent = isFav ? '★' : '☆';
+            favBtn.classList.toggle('favorited', isFav);
+        }
+    }
+
+    function isFavorited(stdNo) {
+        return favorites.some(s => s.stdNo === stdNo);
+    }
+
+    function toggleFavHistPanel(initialTab) {
+        const panel = document.getElementById('favHistPanel');
+        const overlay = document.getElementById('favHistOverlay');
+        if (!panel.classList.contains('open') && initialTab) {
+            currentFavHistTab = initialTab;
+        }
+        panel.classList.toggle('open');
+        overlay.classList.toggle('show');
+        switchFavHistTab(currentFavHistTab);
+    }
+
+    function closeFavHistPanel() {
+        document.getElementById('favHistPanel').classList.remove('open');
+        document.getElementById('favHistOverlay').classList.remove('show');
+    }
+
+    function switchFavHistTab(tab) {
+        currentFavHistTab = tab;
+        document.getElementById('tabFav').classList.toggle('active', tab === 'fav');
+        document.getElementById('tabHist').classList.toggle('active', tab === 'hist');
+        document.getElementById('favHistPanelTitle').innerHTML = tab === 'fav'
+            ? '⭐ 收藏 <span class="count">(' + favorites.length + ')</span>'
+            : '🕐 历史 <span class="count">(' + historyList.length + ')</span>';
+        renderFavHistPanel();
+        // Update footer
+        const footer = document.getElementById('favHistPanelFooter');
+        if (tab === 'fav') {
+            footer.innerHTML = `
+                <button class="compare-action-btn" onclick="exportFavorites()">📥 导出</button>
+                <button class="compare-action-btn" onclick="clearFavorites()">🗑️ 清空</button>`;
+        } else {
+            footer.innerHTML = `
+                <button class="compare-action-btn" onclick="exportHistory()">📥 导出</button>
+                <button class="compare-action-btn" onclick="clearHistory()">🗑️ 清空</button>`;
+        }
+    }
+
+    function renderFavHistPanel() {
+        const body = document.getElementById('favHistPanelBody');
+        if (currentFavHistTab === 'fav') {
+            renderFavorites(body);
+        } else {
+            renderHistory(body);
+        }
+    }
+
+    function renderFavorites(body) {
+        if (favorites.length === 0) {
+            body.innerHTML = `<div class="fav-hist-empty">
+                <div class="icon">⭐</div>
+                <p>暂无收藏</p>
+                <p style="font-size:12px;margin-top:8px;">点击列表中的 ☆ 按钮收藏常用标准件</p>
+            </div>`;
+            return;
+        }
+        body.innerHTML = favorites.map(f => `
+            <div class="fav-item" onclick="openFavItem('${f.stdNo.replace(/'/g, "\\'")}', '${f.categoryId}')">
+                <span class="fav-icon">★</span>
+                <div class="info">
+                    <div class="stdno">${f.stdNo}</div>
+                    <div class="fname">${f.name}</div>
+                </div>
+                <button class="fav-remove" onclick="event.stopPropagation(); removeFavorite('${f.stdNo.replace(/'/g, "\\'")}')" title="移除">×</button>
+            </div>`).join('');
+    }
+
+    function renderHistory(body) {
+        if (historyList.length === 0) {
+            body.innerHTML = `<div class="fav-hist-empty">
+                <div class="icon">🕐</div>
+                <p>暂无历史记录</p>
+                <p style="font-size:12px;margin-top:8px;">查看过的规格件会显示在这里</p>
+            </div>`;
+            return;
+        }
+        body.innerHTML = historyList.map(h => {
+            const d = new Date(h.time);
+            const timeStr = d.getFullYear() === new Date().getFullYear()
+                ? `${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`
+                : `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+            return `
+            <div class="hist-item" onclick="openFavItem('${h.stdNo.replace(/'/g, "\\'")}', '${h.categoryId}')">
+                <span class="hist-time">${timeStr}</span>
+                <div class="info">
+                    <div class="stdno">${h.stdNo}</div>
+                    <div class="fname">${h.name}</div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function openFavItem(stdNo, categoryId) {
+        closeFavHistPanel();
+        selectCategory(categoryId);
+        selectStandard(stdNo, categoryId);
+    }
+
+    function removeFavorite(stdNo) {
+        favorites = favorites.filter(s => s.stdNo !== stdNo);
+        localStorage.setItem('stdFavorites', JSON.stringify(favorites));
+        updateFavBadge();
+        renderFavHistPanel();
+        if (currentCategory) renderModelList(currentCategory);
+    }
+
+    function clearFavorites() {
+        if (favorites.length === 0) return;
+        if (!confirm('确定清空所有收藏？')) return;
+        favorites = [];
+        localStorage.setItem('stdFavorites', JSON.stringify(favorites));
+        updateFavBadge();
+        renderFavHistPanel();
+        if (currentCategory) renderModelList(currentCategory);
+    }
+
+    function clearHistory() {
+        if (historyList.length === 0) return;
+        if (!confirm('确定清空所有历史？')) return;
+        historyList = [];
+        localStorage.setItem('stdHistory', JSON.stringify(historyList));
+        renderFavHistPanel();
+    }
+
+    function exportFavorites() {
+        if (favorites.length === 0) { alert('暂无收藏可导出'); return; }
+        const txt = favorites.map(f => `${f.stdNo}\t${f.name}\t${f.category || ''}`).join('\n');
+        downloadText('\uFEFF' + '标准号\t名称\t分类\n' + txt, 'favorites.txt');
+    }
+
+    function exportHistory() {
+        if (historyList.length === 0) { alert('暂无历史可导出'); return; }
+        const txt = historyList.map(h => {
+            const d = new Date(h.time);
+            return `${d.toLocaleString()}\t${h.stdNo}\t${h.name}`;
+        }).join('\n');
+        downloadText('\uFEFF' + '时间\t标准号\t名称\n' + txt, 'history.txt');
+    }
+
+    function downloadText(content, filename) {
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename; a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function addToHistory(stdNo, categoryId) {
+        const grouped = groupedData[categoryId];
+        const items = grouped ? grouped[stdNo] : [];
+        const name = items.length > 0 ? items[0].name : stdNo;
+        // Remove duplicate if exists
+        historyList = historyList.filter(h => !(h.stdNo === stdNo && h.categoryId === categoryId));
+        historyList.unshift({ stdNo, categoryId, name, time: Date.now() });
+        historyList = historyList.slice(0, 50); // keep last 50
+        localStorage.setItem('stdHistory', JSON.stringify(historyList));
+    }
+
+    // ==================== Compare Mode ====================
+    let compareList = JSON.parse(localStorage.getItem('stdCompareList') || '[]');
+
+    function toggleComparePanel() {
+        const panel = document.getElementById('comparePanel');
+        const overlay = document.getElementById('compareOverlay');
+        panel.classList.toggle('open');
+        overlay.classList.toggle('show');
+        renderComparePanel();
+    }
+
+    function updateCompareBadge() {
+        const badge = document.getElementById('compareBadge');
+        const count = compareList.length;
+        badge.textContent = count;
+        badge.classList.toggle('show', count > 0);
+    }
+
+    function addToCompare(stdNo, categoryId) {
+        // Check same category only
+        if (compareList.length > 0 && compareList[0].categoryId !== categoryId) {
+            alert('⚠️ 对比功能仅支持同一分类的零件，请先选择相同分类。');
+            return;
+        }
+        if (compareList.length >= 6) {
+            alert('⚠️ 最多同时对比6个规格。');
+            return;
+        }
+        if (compareList.some(s => s.stdNo === stdNo)) {
+            return; // already added
+        }
+        compareList.push({ stdNo, categoryId });
+        localStorage.setItem('stdCompareList', JSON.stringify(compareList));
+        updateCompareBadge();
+        // Brief highlight
+        const btn = document.getElementById('compareToggleBtn');
+        btn.style.background = 'var(--accent-bg)';
+        btn.style.borderColor = 'var(--accent)';
+        setTimeout(() => {
+            btn.style.background = '';
+            btn.style.borderColor = '';
+        }, 400);
+    }
+
+    function toggleCompareAdd(stdNo, categoryId) {
+        const exists = compareList.some(s => s.stdNo === stdNo);
+        if (exists) {
+            removeFromCompare(stdNo);
+        } else {
+            addToCompare(stdNo, categoryId);
+        }
+        // Re-render model list to update button state
+        if (currentCategory) {
+            renderModelList(currentCategory);
+        }
+    }
+
+    function removeFromCompare(stdNo) {
+        compareList = compareList.filter(s => s.stdNo !== stdNo);
+        localStorage.setItem('stdCompareList', JSON.stringify(compareList));
+        updateCompareBadge();
+        renderComparePanel();
+    }
+
+    function clearCompareList() {
+        compareList = [];
+        localStorage.setItem('stdCompareList', JSON.stringify(compareList));
+        updateCompareBadge();
+        renderComparePanel();
+    }
+
+    function openCompareInDetail() {
+        if (compareList.length === 0) return;
+        const { stdNo, categoryId } = compareList[0];
+        toggleComparePanel();
+        selectCategory(categoryId);
+        selectStandard(stdNo, categoryId);
+    }
+
+    function renderComparePanel() {
+        const body = document.getElementById('comparePanelBody');
+        const countEl = document.getElementById('comparePanelCount');
+        if (compareList.length === 0) {
+            countEl.textContent = '';
+            body.innerHTML = `
+                <div class="compare-empty">
+                    <div class="icon">⚖️</div>
+                    <p>暂无对比项目</p>
+                    <p style="font-size:12px;margin-top:8px;">点击列表中的 ⚡ 按钮添加规格进行对比</p>
+                </div>`;
+            return;
+        }
+        countEl.textContent = `(${compareList.length}/6)`;
+
+        // Collect all items
+        const items = compareList.map(s => {
+            const grouped = groupedData[s.categoryId];
+            const list = grouped ? grouped[s.stdNo] : [];
+            return { stdNo: s.stdNo, categoryId: s.categoryId, items: list };
+        }).filter(x => x.items.length > 0);
+
+        if (items.length === 0) {
+            body.innerHTML = '<div class="compare-empty"><div class="icon">⚠️</div><p>数据加载失败</p></div>';
+            return;
+        }
+
+        // All unique params across all items
+        const allParams = new Set();
+        const allItemsFlat = [];
+        items.forEach(group => {
+            group.items.forEach(item => {
+                allItemsFlat.push(item);
+                (item.dimensions || []).forEach(d => allParams.add(d.param));
+            });
+        });
+        const paramList = Array.from(allParams);
+
+        // Build table: rows = params, cols = specs
+        let tableHtml = `
+        <div class="compare-table-wrap">
+        <table class="compare-table">
+            <thead>
+                <tr>
+                    <th style="min-width:100px;">参数</th>
+                    ${items.map(g => `
+                        <th>
+                            <span class="compare-stdno">${g.stdNo}</span>
+                            <button class="compare-remove" onclick="removeFromCompare('${g.stdNo}')" title="移除">×</button>
+                        </th>`).join('')}
+                </tr>
+            </thead>
+            <tbody>`;
+
+        // Name row
+        tableHtml += `<tr>
+            <th style="color:var(--table-header);">名称</th>
+            ${items.map(g => `<td class="compare-name" title="${g.items[0].name}">${g.items[0].name}</td>`).join('')}
+        </tr>`;
+
+        // Category row
+        tableHtml += `<tr class="param-row">
+            <th>分类</th>
+            ${items.map(g => `<td>${g.items[0].category || ''}</td>`).join('')}
+        </tr>`;
+
+        // Each param row
+        for (const param of paramList) {
+            tableHtml += `<tr>
+                <th style="color:var(--table-header);">${param}</th>
+                ${items.map(g => {
+                    // Try to find matching dimension (consider aliases)
+                    const dim = g.items[0].dimensions?.find(d => d.param === param);
+                    return `<td>${dim ? dim.value : '-'}</td>`;
+                }).join('')}
+            </tr>`;
+        }
+
+        // Description
+        tableHtml += `<tr class="param-row">
+            <th>说明</th>
+            ${items.map(g => `<td style="font-size:11px;color:var(--text-muted);max-width:150px;overflow:hidden;text-overflow:ellipsis;">${g.items[0].description || '-'}</td>`).join('')}
+        </tr>`;
+
+        tableHtml += '</tbody></table></div>';
+        body.innerHTML = tableHtml;
+    }
+
+    // Patch selectStandard to add compare button
+    const origSelectStandard = selectStandard;
+    selectStandard = function(stdNo, catId) {
+        origSelectStandard(stdNo, catId);
+        updateCompareBadge();
+    };
+
+    // ==================== Init ====================
+    function initStats() {
+        let total = 0;
+        const catCounts = {};
+        for (const [catId, models] of Object.entries(standardsData)) {
+            const count = models.length || 0;
+            catCounts[catId] = count;
+            total += count;
+        }
+        document.getElementById('totalCount').textContent = total.toLocaleString();
+        document.getElementById('fastenerCount').textContent = (catCounts['fasteners'] || 0).toLocaleString();
+        document.getElementById('flangeCount').textContent = (catCounts['flanges'] || 0).toLocaleString();
+        document.getElementById('gasketCount').textContent = (catCounts['gaskets'] || 0).toLocaleString();
+        document.getElementById('bearingCount').textContent = (catCounts['bearings'] || 0).toLocaleString();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        renderCategories();
+        initStats();
+        updateCompareBadge();
+        updateFavBadge();
+        if (categories.length > 0) {
+            selectCategory(categories[0].id);
+        }
+    });
+    </script>
+
+    <!-- Favorites & History Panel -->
+    <div class="compare-overlay" id="favHistOverlay" onclick="closeFavHistPanel()"></div>
+    <div class="fav-hist-panel" id="favHistPanel">
+        <div class="fav-hist-panel-header">
+            <h2 id="favHistPanelTitle">⭐ 收藏</h2>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <div class="panel-tabs" id="panelTabs">
+                    <button class="panel-tab active" id="tabFav" onclick="switchFavHistTab('fav')">⭐ 收藏</button>
+                    <button class="panel-tab" id="tabHist" onclick="switchFavHistTab('hist')">🕐 历史</button>
+                </div>
+                <button class="compare-close-btn" onclick="closeFavHistPanel()">×</button>
+            </div>
+        </div>
+        <div class="fav-hist-panel-body" id="favHistPanelBody">
+            <!-- JS renders content here -->
+        </div>
+        <div class="fav-hist-panel-footer" id="favHistPanelFooter">
+            <!-- JS controls footer content -->
+        </div>
+    </div>
+
+    <!-- Compare Overlay -->
+    <div class="compare-overlay" id="compareOverlay" onclick="toggleComparePanel()"></div>
+
+    <!-- Compare Panel -->
+    <div class="compare-panel" id="comparePanel">
+        <div class="compare-panel-header">
+            <h2>⚖️ 规格对比 <span id="comparePanelCount" style="font-size:12px;color:var(--text-muted);font-weight:normal;"></span></h2>
+            <button class="compare-close-btn" onclick="toggleComparePanel()">×</button>
+        </div>
+        <div class="compare-panel-body" id="comparePanelBody">
+            <!-- Compare content injected by JS -->
+        </div>
+        <div class="compare-panel-footer">
+            <button class="compare-action-btn" onclick="clearCompareList()">🗑️ 清空</button>
+            <button class="compare-action-btn primary" onclick="openCompareInDetail()">📋 打开详情</button>
+        </div>
+    </div>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-nav" id="mobileNav">
+        <button class="mobile-nav-item active" id="navCat" onclick="switchMobileTab('leftPanel')">
+            <span class="nav-icon">📂</span>
+            分类
+        </button>
+        <button class="mobile-nav-item" id="navList" onclick="switchMobileTab('middlePanel')">
+            <span class="nav-icon">📋</span>
+            列表
+        </button>
+        <button class="mobile-nav-item" id="navDetail" onclick="switchMobileTab('detailPanel')">
+            <span class="nav-icon">📄</span>
+            详情
+        </button>
+    </nav>
+</body>
+</html>
